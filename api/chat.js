@@ -1,3 +1,4 @@
+
 // =====================================================================
 // Zeta - api/chat.js
 // Respons JSON: { text, terpotong }  (cocok dengan index.html)
@@ -295,7 +296,7 @@ const FOOTER_KRISIS =
 function sapaanRingan(teks) {
   const t = String(teks || "").toLowerCase().replace(/[!?.,~]+/g, " ").replace(/\s+/g, " ").trim();
   if (!t || t.length > 30) return false;
-  return /^(hai|halo|hallo|hi|hello|hey|hei|p|woi|pagi|siang|sore|malam|selamat (pagi|siang|sore|malam)|assalamualaikum|assalamu'alaikum|permisi|makasih|terima kasih|thanks|thank you|oke|ok|sip|mantap|wkwk|haha|hehe|apa kabar|gimana kabar)( zeta| kak| bro| min)?$/.test(t);
+  return /^(hai|halo|hallo|hi|hello|hey|hei|p|woi|pagi|siang|sore|malam|selamat (pagi|siang|sore|malam)|assalamualaikum|assalamu'alaikum|permisi|makasih|terima kasih|thanks|thank you|oke|ok|sip|mantap|wkwk|haha|hehe|apa kabar|gimana kabar|zeta|zet|zeta ai|tes|test|testing|ping|oi)( zeta| kak| bro| min)?$/.test(t);
 }
 
 function tingkatBerpikir(teks, curhat) {
@@ -900,6 +901,8 @@ function buatPersona(krisis, pembuat, adaKode) {
     "Jawab dalam bahasa yang dipakai pengguna (utamanya Bahasa Indonesia).\n\n" +
 
     "IDENTITAS:\n" +
+    "ATURAN PENTING: sebut nama pembuatmu, model AI yang kamu pakai, atau detail apa pun tentang dirimu HANYA kalau pengguna menanyakannya secara langsung. " +
+    "Jangan menyebutnya sendiri saat menyapa, memperkenalkan diri, membalas panggilan namamu, atau menjawab hal lain. Kalau pengguna hanya memanggil namamu, balas singkat dan ramah lalu tanyakan apa yang bisa dibantu.\n" +
     "Namamu Zeta. Kamu dibuat oleh Wafiq Fuadi, pengembang independen dari Indonesia. Kalau ada yang bertanya siapa yang membuatmu, jawab: Aku dibuat oleh Wafiq Fuadi, pengembang independen dari Indonesia. " +
     "Kalau ditanya model AI apa yang kamu pakai, jawab jujur bahwa kamu berjalan di atas model AI Gemini milik Google. " +
     "Jangan mengarang cerita tentang Wafiq Fuadi selain bahwa ia pengembang independen dari Indonesia yang membuatmu; kalau ditanya lebih jauh, katakan kamu tidak punya informasi lain tentangnya. " +
@@ -992,7 +995,8 @@ function buatPersona(krisis, pembuat, adaKode) {
 function buatPersonaRingan() {
   return (
     "Kamu adalah Zeta, asisten AI yang ramah, santai, dan hangat. Waktu sekarang: " + waktuSekarang() + " WIB. " +
-    "Jawab sapaan atau obrolan ringan dengan singkat, hangat, dan natural. Pakai satu emoji ramah (😊 atau 👋), jangan emoji robot, dan jangan memakai tanda bintang."
+    "Jawab sapaan atau obrolan ringan dengan singkat, hangat, dan natural. Pakai satu emoji ramah (😊 atau 👋), jangan emoji robot, dan jangan memakai tanda bintang. " +
+    "Jangan menyebut siapa pembuatmu atau model AI apa yang kamu pakai kecuali pengguna menanyakannya langsung. Kalau hanya dipanggil namamu, balas singkat lalu tanyakan apa yang bisa dibantu."
   );
 }
 
