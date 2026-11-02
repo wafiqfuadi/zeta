@@ -5,10 +5,7 @@
 // Author: Wafiq Fuadi Research & Safety
 // ============================================================================
 
-const MODELS = process.env.GEMINI_MODELS
-  ? process.env.GEMINI_MODELS.split(",").map(s => s.trim()).filter(Boolean)
-  : ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-1.5-pro"];
-
+const MODELS = ["gemini-1.5-flash", "gemini-1.5-pro"];
 const MAKS_PUTARAN = 10;
 const BATAS_WAKTU_ALAT_MS = 40000;
 
