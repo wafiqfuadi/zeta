@@ -653,7 +653,7 @@ function shrink(file,max,q){return new Promise((res,rej)=>{
 async function addFiles(files){
   for(const f of files){
     try{
-      if(f.type.startsWith("image/")){pend.push({kind:"image",name:f.name,data:await shrink(f,1024,.8),thumb:await shrink(f,120,.7)})}
+      if(f.type.startsWith("image/")){pend.push({kind:"image",name:f.name,data:await shrink(f,1280,.85),thumb:await shrink(f,120,.7)})}
       else if(isText(f)){
         if(f.size>100*1024){toast(f.name+" terlalu besar (maks 100 KB)");continue}
         pend.push({kind:"text",name:f.name,text:await f.text()});
@@ -729,15 +729,6 @@ function pesanStatus(st){
   return "Server sedang bermasalah (kode "+st+"). Coba lagi sebentar ya 😊";
 }
 const tunggu=ms=>new Promise(r=>setTimeout(r,ms));
-// Menyeragamkan kejadian dari server: format baru {type,text|message|terpotong} dan format lama {t,s,e,done,cut}.
-function normEvt(o){
-  if(!o||typeof o!=="object")return {};
-  if(o.type==="delta")return {t:String(o.text||"")};
-  if(o.type==="status")return {s:String(o.text||"")};
-  if(o.type==="error")return {e:String(o.message||"Terjadi gangguan. Coba lagi ya 😊")};
-  if(o.type==="done")return {done:true,cut:!!o.terpotong};
-  return o;
-}
 
 async function jalankan(c,imgs){
   setBusy(true);
@@ -786,9 +777,8 @@ async function jalankan(c,imgs){
           const ln=buf.slice(0,k).trim();buf=buf.slice(k+1);
           if(!ln)continue;
           let o;try{o=JSON.parse(ln)}catch(e){continue}
-          o=normEvt(o);
           if(o.t){raw+=o.t;status="";gambar()}
-          else if(o.s){if(o.s!=="…"){status=o.s;gambar()}}
+          else if(o.s){status=o.s;gambar()}
           else if(o.e)throw new Error(o.e);
           else if(o.done)cut=!!o.cut;
         }
