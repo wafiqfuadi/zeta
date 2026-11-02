@@ -61,7 +61,7 @@ footer{background:var(--card);border-top:1px solid var(--bd);padding:10px 14px}
 #pend:empty{display:none}
 #pend .chip{background:var(--hov);color:var(--tx);padding:4px 4px 4px 8px}
 .row{display:flex;gap:8px;max-width:760px;margin:0 auto;align-items:flex-end;position:relative}
-textarea{flex:1;resize:none;border:1px solid var(--bd);border-radius:14px;padding:10px 12px;font:inherit;background:var(--bg);color:var(--tx);max-height:160px}
+textarea{flex:1;resize:none;border:1px solid var(--bd);border-radius:14px;padding:10px 12px;font:inherit;background:var(--bg);color:var(--tx);max-height:160px;overflow-y:hidden;scrollbar-width:thin}
 #send{border:0;background:#6d4aff;color:#fff;border-radius:14px;padding:0 18px;font-weight:600;cursor:pointer;height:44px}
 #send:disabled{opacity:.5}
 #plus{border:1px solid var(--bd);background:var(--card);border-radius:14px;width:44px;height:44px;display:grid;place-items:center;cursor:pointer;flex:none}
@@ -589,7 +589,7 @@ pm.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{
 
 /* kirim */
 let ac=null;
-function autosize(){inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,160)+"px"}
+function autosize(){inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,160)+"px";inp.style.overflowY=inp.scrollHeight>160?"auto":"hidden"}
 inp.addEventListener("input",autosize);
 function setBusy(b){busy=b;btn.textContent=b?"Stop":"Kirim";btn.classList.toggle("stop",b);btn.disabled=false}
 
@@ -702,7 +702,7 @@ $("bclr").onclick=()=>{
 };
 
 if(mobile())setSide(false);
-applyTheme();renderList();
+applyTheme();renderList();autosize();
 </script>
 </body>
 </html>
