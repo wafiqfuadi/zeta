@@ -1,52 +1,334 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zeta</title>
 <style>
+:root{--bg:#fafaf7;--card:#fff;--bd:#e5e7eb;--tx:#1f2328;--mut:#6b7280;--pri:#6d4aff;--bot:#f0eefc;--hov:#f3f2fb;--wm:#1a12b5}
+:root[data-theme=dark]{--bg:#14141a;--card:#1c1c24;--bd:#2c2c38;--tx:#e8e8ee;--mut:#9a9aaa;--bot:#26233d;--hov:#262633;--wm:#9b93ff}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
-body{background:#fafaf7;color:#1f2328;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column}
-header{padding:14px 18px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:10px}
+body{background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:row;overflow:hidden}
+button{font:inherit;color:inherit}
+.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* sidebar */
+#side{width:280px;flex:none;background:var(--card);border-right:1px solid var(--bd);display:flex;flex-direction:column;transition:margin-left .2s;height:100%}
+body:not(.side-open) #side{margin-left:-280px}
+#back{display:none}
+.sh{padding:12px;display:flex;flex-direction:column;gap:8px}
+.newb{display:flex;align-items:center;gap:8px;width:100%;border:0;background:var(--pri);color:#fff;border-radius:12px;padding:10px 12px;font-weight:600;cursor:pointer}
+.srch{display:flex;align-items:center;gap:8px;border:1px solid var(--bd);border-radius:12px;padding:0 10px;color:var(--mut)}
+.srch input{flex:1;border:0;background:none;outline:none;padding:9px 0;font:inherit;color:var(--tx);min-width:0}
+#list{flex:1;overflow-y:auto;padding:0 8px 8px}
+.gl{font-size:12px;color:var(--mut);padding:12px 8px 4px}
+.it{display:flex;align-items:center;gap:4px;border-radius:10px;padding:8px 8px 8px 10px;cursor:pointer}
+.it:hover,.it.on{background:var(--hov)}
+.it .tt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.act{display:none;gap:2px}
+.it:hover .act,.it.on .act{display:flex}
+@media(hover:none){.act{display:flex}}
+.sm{border:0;background:none;color:var(--mut);padding:4px;border-radius:8px;cursor:pointer;display:grid;place-items:center}
+.sm:hover{background:var(--bd);color:var(--tx)}
+.empty{color:var(--mut);font-size:14px;text-align:center;padding:24px 8px}
+.sf{border-top:1px solid var(--bd);padding:8px;display:flex;flex-direction:column;gap:2px}
+.mi{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;border-radius:10px;padding:9px 10px;cursor:pointer;text-align:left;font-size:14px}
+.mi:hover{background:var(--hov)}
+
+/* main */
+#main{flex:1;min-width:0;height:100%;display:flex;flex-direction:column}
+header{padding:14px 18px;background:var(--card);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.ib{border:0;background:none;color:var(--tx);width:36px;height:36px;border-radius:10px;display:grid;place-items:center;cursor:pointer;flex:none}
+.ib:hover{background:var(--hov)}
 .logo{width:34px;height:34px;border-radius:10px;background:#6d4aff;color:#fff;display:grid;place-items:center;font-weight:700}
-header span{display:block;font-size:12px;color:#6b7280}
+img.logo{background:none;object-fit:contain}
+header span{display:block;font-size:12px;color:var(--mut)}
+.wm{font-family:"Arial Black","Segoe UI",Roboto,system-ui,sans-serif;font-weight:900;font-size:20px;letter-spacing:.06em;color:var(--wm);line-height:1.1}
 #log{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;max-width:760px;width:100%;margin:0 auto}
 .m{max-width:85%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;word-wrap:break-word}
 .u{align-self:flex-end;background:#6d4aff;color:#fff}
-.b{align-self:flex-start;background:#f0eefc}
-.hint{color:#6b7280;text-align:center;margin:auto}
-footer{background:#fff;border-top:1px solid #e5e7eb;padding:10px 14px}
-.row{display:flex;gap:8px;max-width:760px;margin:0 auto}
-textarea{flex:1;resize:none;border:1px solid #e5e7eb;border-radius:14px;padding:10px 12px;font:inherit}
-button{border:0;background:#6d4aff;color:#fff;border-radius:14px;padding:0 18px;font:inherit;font-weight:600;cursor:pointer}
-button:disabled{opacity:.5}
+.b{align-self:flex-start;background:var(--bot)}
+.hint{color:var(--mut);text-align:center;margin:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border-radius:10px;padding:4px 8px;font-size:13px;max-width:200px}
+.chip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip img{width:28px;height:28px;object-fit:cover;border-radius:6px}
+
+/* composer */
+footer{background:var(--card);border-top:1px solid var(--bd);padding:10px 14px}
+#pend{max-width:760px;margin:0 auto 8px;display:flex;flex-wrap:wrap;gap:6px}
+#pend:empty{display:none}
+#pend .chip{background:var(--hov);color:var(--tx);padding:4px 4px 4px 8px}
+.row{display:flex;gap:8px;max-width:760px;margin:0 auto;align-items:flex-end;position:relative}
+textarea{flex:1;resize:none;border:1px solid var(--bd);border-radius:14px;padding:10px 12px;font:inherit;background:var(--bg);color:var(--tx);max-height:160px}
+#send{border:0;background:#6d4aff;color:#fff;border-radius:14px;padding:0 18px;font-weight:600;cursor:pointer;height:44px}
+#send:disabled{opacity:.5}
+#plus{border:1px solid var(--bd);background:var(--card);border-radius:14px;width:44px;height:44px;display:grid;place-items:center;cursor:pointer;flex:none}
+#plus:hover{background:var(--hov)}
+#pm{display:none;position:absolute;left:0;bottom:52px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:6px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:5}
+#pm.open{display:block}
+
+/* dialog + toast */
+dialog{border:1px solid var(--bd);border-radius:16px;background:var(--card);color:var(--tx);padding:18px;max-width:420px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog h3{margin:0 0 12px;font-size:18px}
+dialog h4{margin:16px 0 6px;font-size:14px;color:var(--mut);font-weight:600}
+.seg{display:flex;gap:6px}
+.seg button,.dbtn{flex:1;border:1px solid var(--bd);background:var(--bg);border-radius:10px;padding:8px;cursor:pointer;font-size:14px}
+.seg button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.dbtn{width:100%;text-align:left;margin-bottom:6px}
+.dbtn.red{color:#d92d20}
+.close{margin-top:14px;width:100%;border:0;background:var(--pri);color:#fff;border-radius:12px;padding:10px;font-weight:600;cursor:pointer}
+dialog ul{margin:0;padding-left:18px;font-size:14px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#1f2328;color:#fff;padding:8px 14px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;max-width:90%}
+#toast.show{opacity:1}
+
+@media(max-width:799px){
+  #side{position:fixed;left:0;top:0;bottom:0;z-index:30;box-shadow:0 0 30px rgba(0,0,0,.25)}
+  body.side-open #back{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20}
+}
 </style>
 </head>
-<body>
-<header><div class="logo">Z</div><div><b>Zeta</b><span>Asisten AI serbaguna</span></div></header>
+<body class="side-open">
+<aside id="side">
+  <div class="sh">
+    <button class="newb" id="newb"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Chat baru</button>
+    <label class="srch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="q" placeholder="Cari chat" autocomplete="off"></label>
+  </div>
+  <div id="list"></div>
+  <div class="sf">
+    <button class="mi" id="bset"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Pengaturan</button>
+    <button class="mi" id="bhelp"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .5c0 1.7-2.5 2-2.5 3.5M12 17h.01"/></svg>Bantuan</button>
+  </div>
+</aside>
+<div id="back"></div>
+
+<div id="main">
+<header>
+  <button class="ib" id="menu" aria-label="Menu"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  <img class="logo" alt="Zeta AI" src="data:image/jpeg;base64,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"><div><b class="wm">ZETA AI</b><span>Asisten AI serbaguna</span></div>
+  <button class="ib" id="hnew" aria-label="Chat baru" style="margin-left:auto"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+</header>
 <div id="log"><div class="hint" id="hint">Halo, aku Zeta. Tanya apa saja atau minta bantuan mengerjakan tugas.</div></div>
-<footer><div class="row"><textarea id="in" rows="1" placeholder="Tulis pesan untuk Zeta…"></textarea><button id="send">Kirim</button></div></footer>
+<footer>
+  <div id="pend"></div>
+  <div class="row">
+    <div id="pm">
+      <button class="mi" data-a="file"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8zM14 3v5h5"/></svg>Unggah file</button>
+      <button class="mi" data-a="photo"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L5 20"/></svg>Unggah foto</button>
+      <button class="mi" data-a="cam"><svg class="ic" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Ambil foto</button>
+      <button class="mi" data-a="edit"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20L16 8M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM19 12l.7 1.3L21 14l-1.3.7L19 16l-.7-1.3L17 14l1.3-.7z"/></svg>Edit foto</button>
+    </div>
+    <button id="plus" aria-label="Tambah lampiran"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    <textarea id="in" rows="1" placeholder="Tulis pesan untuk Zeta…"></textarea>
+    <button id="send">Kirim</button>
+  </div>
+</footer>
+</div>
+
+<input type="file" id="fFile" hidden multiple accept=".txt,.md,.csv,.json,.js,.ts,.py,.html,.css,.xml,.yml,.yaml,.log,.sql,.java,.c,.cpp,.php,text/*">
+<input type="file" id="fImg" hidden multiple accept="image/*">
+<input type="file" id="fCam" hidden accept="image/*" capture="environment">
+
+<dialog id="dSet">
+  <h3>Pengaturan</h3>
+  <h4>Tema</h4>
+  <div class="seg" id="seg"><button data-t="auto">Otomatis</button><button data-t="light">Terang</button><button data-t="dark">Gelap</button></div>
+  <h4>Data</h4>
+  <button class="dbtn" id="bexp">Ekspor riwayat (JSON)</button>
+  <button class="dbtn red" id="bclr">Hapus semua riwayat</button>
+  <button class="close" data-close>Selesai</button>
+</dialog>
+<dialog id="dHelp">
+  <h3>Bantuan</h3>
+  <ul>
+    <li>Enter untuk kirim, Shift+Enter untuk baris baru.</li>
+    <li>Tombol + di kolom pesan untuk unggah file, unggah foto, ambil foto, atau edit foto.</li>
+    <li>File teks yang bisa dibaca: txt, md, csv, json, dan kode (maks 100 KB).</li>
+    <li>Riwayat chat tersimpan di perangkat ini saja.</li>
+  </ul>
+  <button class="close" data-close>Tutup</button>
+</dialog>
+<div id="toast"></div>
+
 <script>
-const log=document.getElementById("log"),inp=document.getElementById("in"),btn=document.getElementById("send");
-let hist=[],busy=false;
-function add(role,text){const d=document.createElement("div");d.className="m "+role;d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+const $=id=>document.getElementById(id);
+const log=$("log"),inp=$("in"),btn=$("send");
+const LS="zeta_chats_v1",TH="zeta_theme";
+let chats=lsGet(LS,[]),cur=null,pend=[],busy=false,editMode=false;
+
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){toast("Penyimpanan penuh, riwayat tidak tersimpan");return false}}
+function save(){lsSet(LS,chats)}
+let tt;function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2600)}
+const getCur=()=>chats.find(c=>c.id===cur);
+const mobile=()=>innerWidth<800;
+
+/* tema */
+function applyTheme(){
+  const t=lsGet(TH,"auto");
+  const dark=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme=dark?"dark":"light";
+  document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+}
+document.querySelectorAll("#seg button").forEach(b=>b.onclick=()=>{lsSet(TH,b.dataset.t);applyTheme()});
+
+/* pesan */
+function add(role,text,att){
+  const d=document.createElement("div");d.className="m "+role;
+  if(att&&att.length){
+    const c=document.createElement("div");c.className="chips";
+    att.forEach(a=>{const s=document.createElement("div");s.className="chip";
+      if(a.thumb){const i=document.createElement("img");i.src=a.thumb;s.appendChild(i)}
+      const n=document.createElement("span");n.textContent=a.name;s.appendChild(n);c.appendChild(s)});
+    d.appendChild(c);
+  }
+  const t=document.createElement("span");t.textContent=text;d.appendChild(t);
+  log.appendChild(d);log.scrollTop=log.scrollHeight;return t;
+}
+function renderLog(){
+  log.innerHTML="";
+  const c=getCur();
+  if(!c||!c.msgs.length){const h=document.createElement("div");h.className="hint";h.id="hint";h.textContent="Halo, aku Zeta. Tanya apa saja atau minta bantuan mengerjakan tugas.";log.appendChild(h);return}
+  c.msgs.forEach(m=>add(m.role==="user"?"u":"b",m.content,m.att));
+}
+
+/* riwayat */
+function grp(t){
+  const d0=new Date();d0.setHours(0,0,0,0);
+  const days=Math.floor((d0-new Date(t).setHours(0,0,0,0))/864e5);
+  return days<=0?"Hari ini":days===1?"Kemarin":days<=7?"7 hari terakhir":"Lebih lama";
+}
+function renderList(){
+  const q=$("q").value.trim().toLowerCase(),box=$("list");box.innerHTML="";
+  const items=chats.filter(c=>!q||c.title.toLowerCase().includes(q)||c.msgs.some(m=>m.content.toLowerCase().includes(q))).sort((a,b)=>b.t-a.t);
+  if(!items.length){box.innerHTML='<div class="empty">'+(q?"Tidak ada hasil":"Belum ada riwayat")+"</div>";return}
+  let last="";
+  items.forEach(c=>{
+    const g=grp(c.t);
+    if(g!==last){const l=document.createElement("div");l.className="gl";l.textContent=g;box.appendChild(l);last=g}
+    const it=document.createElement("div");it.className="it"+(c.id===cur?" on":"");
+    it.innerHTML='<div class="tt"></div><div class="act"><button class="sm" data-r title="Ubah nama"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button><button class="sm" data-d title="Hapus"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>';
+    it.querySelector(".tt").textContent=c.title||"Chat baru";
+    it.onclick=e=>{
+      if(busy)return toast("Tunggu balasan selesai dulu");
+      if(e.target.closest("[data-r]")){const n=prompt("Nama chat:",c.title);if(n&&n.trim()){c.title=n.trim().slice(0,60);save();renderList()}return}
+      if(e.target.closest("[data-d]")){if(confirm("Hapus chat ini?")){chats=chats.filter(x=>x!==c);if(cur===c.id){cur=null;renderLog()}save();renderList()}return}
+      cur=c.id;renderLog();renderList();if(mobile())setSide(false);
+    };
+    box.appendChild(it);
+  });
+}
+function newChat(){
+  if(busy)return toast("Tunggu balasan selesai dulu");
+  cur=null;pend=[];renderPend();renderLog();renderList();if(mobile())setSide(false);inp.focus();
+}
+function setSide(o){document.body.classList.toggle("side-open",o)}
+$("menu").onclick=()=>setSide(!document.body.classList.contains("side-open"));
+$("back").onclick=()=>setSide(false);
+$("newb").onclick=newChat;$("hnew").onclick=newChat;
+$("q").oninput=renderList;
+
+/* lampiran */
+const isText=f=>f.type.startsWith("text/")||/\.(txt|md|csv|json|js|ts|py|html|css|xml|yml|yaml|log|sql|java|c|cpp|php)$/i.test(f.name);
+function shrink(file,max,q){return new Promise((res,rej)=>{
+  const u=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");
+    c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+    const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+    URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",q))};
+  im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("Gambar tidak bisa dibaca"))};im.src=u})}
+async function addFiles(files){
+  for(const f of files){
+    try{
+      if(f.type.startsWith("image/")){pend.push({kind:"image",name:f.name,data:await shrink(f,1280,.85),thumb:await shrink(f,120,.7)})}
+      else if(isText(f)){
+        if(f.size>100*1024){toast(f.name+" terlalu besar (maks 100 KB)");continue}
+        pend.push({kind:"text",name:f.name,text:await f.text()});
+      }else toast("Format "+f.name+" belum didukung");
+    }catch(e){toast(e.message)}
+  }
+  renderPend();
+  if(editMode&&pend.some(p=>p.kind==="image")&&!inp.value){inp.value="Tolong edit foto ini: ";autosize()}
+  editMode=false;inp.focus();
+}
+function renderPend(){
+  const b=$("pend");b.innerHTML="";
+  pend.forEach((p,i)=>{
+    const s=document.createElement("div");s.className="chip";
+    if(p.thumb){const im=document.createElement("img");im.src=p.thumb;s.appendChild(im)}
+    const n=document.createElement("span");n.textContent=p.name;s.appendChild(n);
+    const x=document.createElement("button");x.className="sm";x.setAttribute("aria-label","Hapus lampiran");
+    x.innerHTML='<svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    x.onclick=()=>{pend.splice(i,1);renderPend()};s.appendChild(x);b.appendChild(s);
+  });
+}
+const pm=$("pm");
+$("plus").onclick=e=>{e.stopPropagation();pm.classList.toggle("open")};
+document.addEventListener("click",e=>{if(!pm.contains(e.target))pm.classList.remove("open")});
+pm.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{
+  pm.classList.remove("open");const a=b.dataset.a;editMode=a==="edit";
+  ({file:"fFile",photo:"fImg",edit:"fImg",cam:"fCam"}[a]&&$({file:"fFile",photo:"fImg",edit:"fImg",cam:"fCam"}[a]).click());
+});
+["fFile","fImg","fCam"].forEach(id=>$(id).onchange=e=>{const fs=[...e.target.files];e.target.value="";addFiles(fs)});
+
+/* kirim */
+function autosize(){inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,160)+"px"}
+inp.addEventListener("input",autosize);
 async function send(){
-  const text=inp.value.trim();if(!text||busy)return;
-  const h=document.getElementById("hint");if(h)h.remove();
-  inp.value="";busy=true;btn.disabled=true;
-  add("u",text);hist.push({role:"user",content:text});
+  const text=inp.value.trim();if((!text&&!pend.length)||busy)return;
+  let c=getCur();
+  if(!c){c={id:Date.now().toString(36),title:"",msgs:[],t:Date.now()};chats.unshift(c);cur=c.id}
+  const h=$("hint");if(h)h.remove();
+  let api=text,imgs=[],att=[];
+  pend.forEach(f=>{
+    if(f.kind==="text")api+="\n\n[File: "+f.name+"]\n"+f.text;
+    else imgs.push({name:f.name,type:"image/jpeg",data:f.data.split(",")[1]});
+    att.push({name:f.name,kind:f.kind,thumb:f.thumb});
+  });
+  if(!api.trim())api="Tolong lihat lampiran ini.";
+  const shown=text||"(lampiran)";
+  c.msgs.push({role:"user",content:shown,api,att});
+  if(!c.title)c.title=(text||att[0].name).slice(0,40);
+  c.t=Date.now();
+  pend=[];renderPend();inp.value="";autosize();
+  busy=true;btn.disabled=true;renderList();
+  add("u",shown,att);
   const out=add("b","…");
   try{
-    const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({messages:hist})});
+    const body={messages:c.msgs.map(m=>({role:m.role,content:m.api||m.content}))};
+    if(imgs.length)body.attachments=imgs;
+    const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||"Gagal");
-    out.textContent=d.text;hist.push({role:"assistant",content:d.text});
-  }catch(e){out.textContent="Maaf, ada gangguan: "+e.message;hist.pop()}
+    out.textContent=d.text;c.msgs.push({role:"assistant",content:d.text});
+  }catch(e){
+    out.textContent="Maaf, ada gangguan: "+e.message;c.msgs.pop();
+    if(!c.msgs.length){chats=chats.filter(x=>x!==c);cur=null}
+  }
+  save();renderList();
   busy=false;btn.disabled=false;inp.focus();
 }
 btn.onclick=send;
 inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});
+
+/* dialog */
+$("bset").onclick=()=>{$("dSet").showModal();if(mobile())setSide(false)};
+$("bhelp").onclick=()=>{$("dHelp").showModal();if(mobile())setSide(false)};
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
+$("bexp").onclick=()=>{
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(chats,null,2)],{type:"application/json"}));
+  a.download="riwayat-zeta.json";a.click();URL.revokeObjectURL(a.href);
+};
+$("bclr").onclick=()=>{
+  if(busy)return toast("Tunggu balasan selesai dulu");
+  if(confirm("Hapus semua riwayat? Ini tidak bisa dibatalkan.")){chats=[];cur=null;save();renderLog();renderList();$("dSet").close()}
+};
+
+if(mobile())setSide(false);
+applyTheme();renderList();
 </script>
 </body>
 </html>
