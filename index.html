@@ -208,7 +208,14 @@ dialog ul{margin:0;padding-left:18px;font-size:14px}
 const $=id=>document.getElementById(id);
 const log=$("log"),inp=$("in"),btn=$("send");
 const LS="zeta_chats_v1",TH="zeta_theme";
-let chats=lsGet(LS,[]),cur=null,pend=[],busy=false,editMode=false;
+function bersihRiwayat(x){
+  if(!Array.isArray(x))return [];
+  return x.filter(c=>c&&typeof c.id==="string"&&Array.isArray(c.msgs)).map(c=>({
+    id:c.id,title:String(c.title||"").slice(0,80),t:Number(c.t)||0,
+    msgs:c.msgs.filter(m=>m&&(m.role==="user"||m.role==="assistant")&&typeof m.content==="string")
+  }));
+}
+let chats=bersihRiwayat(lsGet(LS,[])),cur=null,pend=[],busy=false,editMode=false;
 
 function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){toast("Penyimpanan penuh, riwayat tidak tersimpan");return false}}
@@ -473,10 +480,10 @@ function paintBot(bd,raw,o){
   const segs=segmen(raw,o.streaming);
   const ada=segs.some(s=>s.t==="f"||s.text.trim());
   segs.forEach(s=>{
-    if(s.t==="t"){if(!s.text.trim())return;const d=document.createElement("div");d.className="md";d.innerHTML=blocksHtml(parseBlocks(s.text));bd.appendChild(d)}
+    if(s.t==="t"){if(!s.text.trim())return;const d=document.createElement("div");d.className="md";try{d.innerHTML=blocksHtml(parseBlocks(s.text))}catch(e){d.textContent=s.text}bd.appendChild(d)}
     else bd.appendChild(fileCard(s,o.streaming));
   });
-  if(o.err){const d=document.createElement("div");d.className="md errt";d.textContent="Maaf, ada gangguan: "+o.err;bd.appendChild(d)}
+  if(o.err){const d=document.createElement("div");d.className="md errt";d.textContent=o.err;bd.appendChild(d)}
   if(o.streaming&&(!ada||o.status)){
     const w=document.createElement("div");w.className="wait";
     w.innerHTML='<span class="dots"><i></i><i></i><i></i></span>';
@@ -620,31 +627,53 @@ async function send(override){
   await jalankan(c,imgs);
 }
 
+function pesanStatus(st){
+  if(st===502||st===504)return "Server terlalu lama menjawab. Coba lagi sebentar ya 😊";
+  if(st===413)return "Pesan atau lampiranmu terlalu besar. Coba kecilkan atau kurangi lampiran.";
+  if(st===404)return "Layanan chat tidak ditemukan. Pastikan file chat.js ada di folder api/ pada Vercel.";
+  if(st===429)return "Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi ya 😊";
+  return "Server sedang bermasalah (kode "+st+"). Coba lagi sebentar ya 😊";
+}
+const tunggu=ms=>new Promise(r=>setTimeout(r,ms));
+
 async function jalankan(c,imgs){
   setBusy(true);
   const bd=botRow();
-  let raw="",status="",cut=false,err="",stopped=false,terjadwal=false;
+  let raw="",status="",cut=false,err="",stopped=false,terjadwal=false,idleHit=false;
   const dekat=()=>log.scrollHeight-log.scrollTop-log.clientHeight<140;
   const gambar=()=>{
     if(terjadwal)return;terjadwal=true;
-    requestAnimationFrame(()=>{terjadwal=false;const n=dekat();paintBot(bd,raw,{streaming:true,status});if(n)log.scrollTop=log.scrollHeight});
+    requestAnimationFrame(()=>{terjadwal=false;try{const n=dekat();paintBot(bd,raw,{streaming:true,status});if(n)log.scrollTop=log.scrollHeight}catch(e){}});
   };
   paintBot(bd,"",{streaming:true,status:""});log.scrollTop=log.scrollHeight;
-  ac=new AbortController();
-  try{
-    const body={messages:c.msgs.map(m=>({role:m.role,content:m.api||m.content}))};
-    if(imgs&&imgs.length)body.attachments=imgs;
-    const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:ac.signal});
-    const ct=r.headers.get("content-type")||"";
-    if(!r.ok||ct.indexOf("ndjson")<0){
-      const d=await r.json().catch(()=>({}));
-      if(!r.ok)throw new Error(d.error||"Gagal");
-      raw=d.text||"";cut=!!d.terpotong;
-    }else{
+
+  // satu kali percobaan; galat yang layak diulang diberi tanda e.ulang
+  const satuKali=async()=>{
+    ac=new AbortController();
+    let idle;
+    const reset=()=>{clearTimeout(idle);idle=setTimeout(()=>{idleHit=true;if(ac)ac.abort()},60000)};
+    try{
+      const body={messages:c.msgs.map(m=>({role:m.role,content:m.api||m.content}))};
+      if(imgs&&imgs.length)body.attachments=imgs;
+      reset();
+      let r;
+      try{r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:ac.signal})}
+      catch(e){
+        if(e&&e.name==="AbortError")throw e;
+        const ex=new Error(navigator.onLine===false?"Kamu sedang offline. Sambungkan internet lalu coba lagi ya 😊":"Tidak bisa terhubung ke server. Periksa koneksi internetmu lalu coba lagi 😊");
+        ex.ulang=true;throw ex;
+      }
+      const ct=r.headers.get("content-type")||"";
+      if(!r.ok||ct.indexOf("ndjson")<0){
+        let d={};try{d=await r.json()}catch(e){}
+        if(!r.ok){const ex=new Error(d.error||pesanStatus(r.status));ex.ulang=(r.status===502||r.status===504);throw ex}
+        raw=d.text||"";cut=!!d.terpotong;return;
+      }
       const rd=r.body.getReader(),dec=new TextDecoder();let buf="";
       for(;;){
         const {value,done}=await rd.read();
         if(done)break;
+        reset();
         buf+=dec.decode(value,{stream:true});
         let k;
         while((k=buf.indexOf("\n"))>=0){
@@ -657,20 +686,32 @@ async function jalankan(c,imgs){
           else if(o.done)cut=!!o.cut;
         }
       }
+    }finally{clearTimeout(idle)}
+  };
+
+  for(let coba=0;coba<2;coba++){
+    try{await satuKali();err="";break}
+    catch(e){
+      if(e&&e.name==="AbortError"){
+        if(idleHit){err="Jawaban terlalu lama tidak datang. Coba lagi ya 😊";idleHit=false}
+        else stopped=true;
+        break;
+      }
+      err=(e&&e.message)||"Terjadi gangguan. Coba lagi ya 😊";
+      if(raw||!e.ulang||coba===1)break;
+      status="Mencoba lagi…";gambar();await tunggu(1500);
     }
-  }catch(e){
-    if(e&&e.name==="AbortError")stopped=true;else err=e.message||"Gagal";
   }
   ac=null;
   if(raw||stopped){
     if(!raw)raw="(dihentikan)";
-    else if(err){raw+="\n\n_(Jawaban terputus: "+err+")_";cut=true}
-    else if(stopped)raw+="\n\n_(dihentikan)_";
+    else if(err){raw+="\n\n*(Jawaban terputus: "+err+")*";cut=true}
+    else if(stopped)raw+="\n\n*(dihentikan)*";
     c.msgs.push({role:"assistant",content:raw,cut:cut||undefined});
     save();setBusy(false);renderList();renderLog(true);
   }else{
     setBusy(false);renderList();
-    paintBot(bd,"",{streaming:false,err:err||"Gagal"});
+    paintBot(bd,"",{streaming:false,err:err||"Terjadi gangguan. Coba lagi ya 😊"});
   }
   inp.focus();
 }
@@ -701,6 +742,10 @@ $("bclr").onclick=()=>{
   if(confirm("Hapus semua riwayat? Ini tidak bisa dibatalkan.")){chats=[];cur=null;save();renderLog();renderList();$("dSet").close()}
 };
 
+window.addEventListener("unhandledrejection",e=>{console.error(e.reason);if(busy&&!ac)setBusy(false)});
+window.addEventListener("error",e=>{console.error(e.error||e.message)});
+window.addEventListener("offline",()=>toast("Kamu sedang offline"));
+window.addEventListener("online",()=>toast("Kembali online"));
 if(mobile())setSide(false);
 applyTheme();renderList();autosize();
 </script>
