@@ -608,8 +608,76 @@ function buatPersona() {
 
     "IDENTITAS: Namamu Zeta, dan kamu adalah asisten AI, bukan manusia. " +
     "Kalau ada yang bertanya kamu dari mana, siapa yang membuatmu, siapa pembuat, pencipta, atau developer-mu, jawab dengan gaya ini: " +
-    "'Aku dibuat oleh Wafiq Fuadi. Namaku Zeta. Ada yang ingin kamu tanyakan atau minta bantuan?' " +
+    "'Aku dibuat oleh Wafiq Fuadi, sebuah perusahaan riset dan keselamatan AI. Namaku Zeta. Ada yang ingin kamu tanyakan atau minta bantuan?' " +
     "Boleh disesuaikan sedikit mengikuti bahasa pengguna, tetapi isinya tetap sama."
+  );
+}
+
+/* ---------- Jawaban tetap & obrolan ringan ---------- */
+
+const JAWABAN_ID =
+  "Aku dibuat oleh Wafiq Fuadi, sebuah perusahaan riset dan keselamatan AI. Namaku Zeta. Ada yang ingin kamu tanyakan atau minta bantuan?";
+const JAWABAN_EN =
+  "I was made by Wafiq Fuadi, an AI research and safety company. My name is Zeta. Is there anything you'd like to ask or need help with?";
+
+// Model tercepat (dipakai untuk obrolan ringan). Default: model paling belakang di daftar MODELS.
+const MODEL_CEPAT = process.env.GEMINI_MODEL_CEPAT || MODELS[MODELS.length - 1];
+
+// Kalau pengguna menanyakan siapa pembuat atau asal Zeta, jawab persis dan langsung (tanpa memanggil AI, jadi instan).
+function tanyaIdentitas(teks) {
+  const t = String(teks || "").toLowerCase().replace(/[?!.,]/g, " ").replace(/\s+/g, " ").trim();
+  if (!t || t.length > 80) return null;
+  if (/(who (made|created|built|developed|designed) you|who is your (creator|developer|maker|owner)|where are you from|who owns you)/.test(t)) {
+    return JAWABAN_EN;
+  }
+  const k = "(?:kamu|km|mu|zeta|anda|lu|lo|kau|engkau|ente)";
+  const pola = [
+    new RegExp("siapa (?:yang |sih yang |sih )?(?:buat|bikin|membuat|menciptakan|ciptakan|mengembangkan|kembangkan)\\s*" + k + "\\b"),
+    new RegExp("(?:buat|bikin|membuat|menciptakan|mengembangkan)\\s*" + k + "\\s*(?:itu |tuh )?siapa"),
+    new RegExp("(?:pembuat|pencipta|pengembang|developer|creator|owner|pemilik)(?:mu|\\s+" + k + ")\\b"),
+    new RegExp(k + ".{0,12}(?:dibuat|dibikin|diciptakan|dikembangkan)"),
+    new RegExp(k + "\\s*(?:itu |tuh )?(?:dari\\s?mana|berasal dari mana|asalnya dari mana)"),
+    /asal(?:mu| kamu| zeta| usulmu)/
+  ];
+  for (let i = 0; i < pola.length; i++) {
+    const m = pola[i].exec(t);
+    if (!m) continue;
+    // pola yang butuh kata "siapa" (pembuat/dibuat) harus memuatnya
+    if ((i === 2 || i === 3) && !/siapa/.test(t)) continue;
+    // pertanyaan harus berakhir tidak lama setelah pola, supaya "siapa yang buat kamu bahagia" tidak ikut terjaring
+    if (t.length - (m.index + m[0].length) > 12) continue;
+    return JAWABAN_ID;
+  }
+  return null;
+}
+
+// Obrolan ringan (sapaan, terima kasih, basa-basi singkat): dijawab cepat tanpa alat dan tanpa berpikir panjang.
+function obrolanRingan(teks) {
+  const t = String(teks || "").toLowerCase().trim();
+  if (!t || t.length > 60) return false;
+  if (/https?:\/\/|\d|\n/.test(t)) return false;
+  if (/(cari|berita|terbaru|terkini|hari ini|harga|cuaca|kurs|kripto|bitcoin|jurnal|github|hitung|kode|coding|error|jelaskan|bandingkan|buatkan|buat |tulis|file|pdf|excel|word|analisis|rumus|artikel|rekomendasi|saran|tutorial|cara |ceritakan|sejarah|tentang|definisi|arti|maksud|terjemah|translate|perbedaan|rangkum|ringkas|ide|tips|resep|daftar)/.test(t)) return false;
+  const tanya = /\b(siapa|apa|kapan|berapa|dimana|di mana|bagaimana|gimana|kenapa|mengapa|apakah|mana|which|what|when|how|why|where|who)\b/;
+  const basaBasi = /^(apa kabar|gimana kabar|bagaimana kabar|siapa namamu|siapa nama kamu|kamu siapa|how are you|what's up|whats up)/;
+  if (tanya.test(t) && !basaBasi.test(t)) return false;
+  return true;
+}
+
+function buatPersonaRingan() {
+  const now = new Date().toLocaleString("id-ID", {
+    timeZone: "Asia/Jakarta",
+    dateStyle: "full",
+    timeStyle: "short"
+  });
+  return (
+    "Kamu adalah Zeta, asisten AI yang ramah, santai, dan hangat, bukan manusia. Waktu sekarang: " + now + " WIB. " +
+    "Jawab dalam bahasa yang dipakai pengguna (utamanya Bahasa Indonesia). " +
+    "Ini obrolan ringan: jawab natural dan langsung seperti teman yang pintar, biasanya pendek (satu sampai tiga kalimat), tanpa bertele-tele. " +
+    "Kalau ternyata pengguna meminta penjelasan atau cerita yang butuh detail, jawab selengkap yang diperlukan. " +
+    "Jangan mengarang fakta; kalau butuh data terbaru yang tidak kamu ketahui, katakan terus terang. " +
+    "Jangan memakai tanda bintang (*) untuk tebal, miring, atau daftar; untuk daftar pakai tanda hubung. " +
+    "Pakai satu emoji ramah bila pas (😊 👋 ✨ 🙌), dan jangan pernah memakai emoji robot (🤖). " +
+    "Kalau ditanya siapa pembuatmu atau kamu dari mana, jawab: 'Aku dibuat oleh Wafiq Fuadi, sebuah perusahaan riset dan keselamatan AI. Namaku Zeta. Ada yang ingin kamu tanyakan atau minta bantuan?'"
   );
 }
 
@@ -662,10 +730,18 @@ async function panggilGemini(model, body) {
   return { r, data };
 }
 
-// Coba dengan mode berpikir yang dipilih; kalau model menolak pengaturannya, ulangi tanpa pengaturan itu.
+// Coba dengan mode berpikir yang dipilih; kalau model menolak pengaturannya, turun ke "low", lalu tanpa pengaturan itu.
 async function panggilAman(model, body) {
   let hasil = await panggilGemini(model, body);
-  if (!hasil.r.ok && hasil.r.status === 400 && body.generationConfig && body.generationConfig.thinkingConfig) {
+  const tc = body.generationConfig && body.generationConfig.thinkingConfig;
+  if (!hasil.r.ok && hasil.r.status === 400 && tc) {
+    if (tc.thinkingLevel === "minimal") {
+      const rendah = Object.assign({}, body, {
+        generationConfig: Object.assign({}, body.generationConfig, { thinkingConfig: { thinkingLevel: "low" } })
+      });
+      hasil = await panggilGemini(model, rendah);
+      if (hasil.r.ok || hasil.r.status !== 400) return hasil;
+    }
     const tanpa = Object.assign({}, body, {
       generationConfig: { maxOutputTokens: body.generationConfig.maxOutputTokens }
     });
@@ -685,6 +761,12 @@ module.exports = async (req, res) => {
   while (messages.length && messages[0].role === "assistant") messages.shift();
   if (messages.length === 0) return res.status(400).json({ error: "Pesan tidak valid" });
 
+  // Pertanyaan "siapa yang membuatmu / kamu dari mana": jawab langsung dengan kalimat tetap, tanpa memanggil AI.
+  const jawabTetap = tanyaIdentitas(messages[messages.length - 1].content);
+  if (jawabTetap && !(Array.isArray(req.body.attachments) && req.body.attachments.length)) {
+    return res.status(200).json({ text: jawabTetap });
+  }
+
   try {
     const mulai = Date.now();
     const contents = messages.map(m => ({
@@ -702,18 +784,21 @@ module.exports = async (req, res) => {
     if (gambar.length && terakhir && terakhir.role === "user") terakhir.parts = terakhir.parts.concat(gambar);
 
     const pesanTerakhir = messages[messages.length - 1];
-    const systemInstruction = { parts: [{ text: buatPersona() }] };
+    const teksTerakhir = String((pesanTerakhir && pesanTerakhir.content) || "");
+    // Obrolan ringan: model tercepat, tanpa alat, berpikir minimal, persona ringkas -> respons jauh lebih cepat.
+    const santai = !gambar.length && obrolanRingan(teksTerakhir);
+    const systemInstruction = { parts: [{ text: santai ? buatPersonaRingan() : buatPersona() }] };
     // batas ini juga mencakup token "berpikir", jadi dibuat besar
     const generationConfig = {
-      maxOutputTokens: 16384,
-      thinkingConfig: { thinkingLevel: tingkatBerpikir(pesanTerakhir && pesanTerakhir.content) }
+      maxOutputTokens: santai ? 4096 : 16384,
+      thinkingConfig: { thinkingLevel: santai ? "minimal" : tingkatBerpikir(teksTerakhir) }
     };
 
-    let urutan = MODELS.slice();
+    let urutan = santai ? [MODEL_CEPAT].concat(MODELS.filter(m => m !== MODEL_CEPAT)) : MODELS.slice();
 
     for (let putaran = 0; putaran <= MAKS_PUTARAN; putaran++) {
       const body = { systemInstruction, contents, generationConfig };
-      const adaAlat = putaran < MAKS_PUTARAN && Date.now() - mulai < BATAS_WAKTU_ALAT_MS;
+      const adaAlat = !santai && putaran < MAKS_PUTARAN && Date.now() - mulai < BATAS_WAKTU_ALAT_MS;
       if (adaAlat) body.tools = ALAT;
 
       let r, data, dipakai;
