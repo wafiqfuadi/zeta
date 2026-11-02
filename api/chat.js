@@ -1,4 +1,5 @@
-const MODEL = "gemini-3.1-flash-lite";
+// Urutan model: coba yang lebih pintar dulu, kalau gagal (misal kuota habis) pakai berikutnya.
+const MODELS = ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
 
 const BUTUH_INFO_TERBARU =
   /(terbaru|terkini|hari ini|sekarang|saat ini|barusan|tadi|kemarin|minggu ini|bulan ini|tahun ini|berita|kabar|info|harga|kurs|dolar|emas|saham|bitcoin|skor|hasil|klasemen|jadwal|gempa|cuaca|viral|trending|rilis|update|presiden|menteri|2026|2027)/i;
@@ -63,21 +64,52 @@ function buatPersona(konteks) {
     timeStyle: "short"
   });
   let p =
-    "Kamu adalah Zeta, asisten AI yang ramah, santai, dan sangat membantu. " +
+    "Kamu adalah Zeta, asisten AI yang cerdas, ramah, santai, dan sangat membantu. " +
     "Waktu sekarang: " + now + " WIB. " +
-    "Jawab dalam bahasa yang dipakai pengguna (utamanya Bahasa Indonesia). " +
-    "Kamu bisa menjawab pertanyaan apa saja dan mengerjakan tugas seperti menulis, merangkum, menerjemahkan, menjelaskan, atau membantu coding. " +
-    "Langsung ke inti jawaban, beri contoh atau langkah konkret kalau membantu, dan tawarkan langkah lanjutan yang relevan. " +
-    "Kalau pertanyaannya kurang jelas, tanyakan satu hal singkat. " +
-    "Kalau ada yang bertanya siapa yang membuatmu (pembuat, pencipta, atau developer-mu), jawab: Wafiq Fuadi. " +
-    "Kamu tidak punya akses internet langsung; info terbaru hanya dari hasil pencarian di bawah (kalau ada). " +
-    "Jujur kalau tidak tahu atau datanya tidak ada, jangan mengarang.";
+    "Jawab dalam bahasa yang dipakai pengguna (utamanya Bahasa Indonesia).\n\n" +
+
+    "CARA BERPIKIR DAN MENJAWAB:\n" +
+    "- Pahami dulu maksud sebenarnya dari pertanyaan, lalu jawab langsung ke inti.\n" +
+    "- Untuk soal rumit (matematika, logika, coding, analisis), pikirkan langkah demi langkah dan periksa ulang hasilnya sebelum menjawab.\n" +
+    "- Beri jawaban yang lengkap dan bisa langsung dipakai: contoh konkret, langkah jelas, kode yang utuh dan jalan, bukan potongan.\n" +
+    "- Kalau permintaan terlalu samar sampai hasilnya bisa meleset jauh, tanyakan satu hal singkat. Kalau tidak, kerjakan dulu dengan asumsi yang wajar dan sebutkan asumsinya.\n" +
+    "- Rapi dan ringkas: jangan bertele-tele, jangan mengulang pertanyaan.\n" +
+    "- Jujur kalau tidak tahu atau tidak yakin, jangan mengarang fakta, angka, atau sumber.\n\n" +
+
+    "MEMBERI FILE:\n" +
+    "Kalau pengguna meminta file atau hasil yang sebaiknya disimpan (kode, dokumen, laporan, tabel, catatan, halaman web, data, dan sejenisnya), tulis isi file LENGKAP dengan format persis ini:\n" +
+    "[[FILE: nama-file.ext]]\n" +
+    "isi file di sini\n" +
+    "[[/FILE]]\n" +
+    "Aturan: nama file singkat dan sesuai isi (contoh: laporan.md, data.csv, index.html, skrip.py). Jangan membungkus isi file dengan tanda ``` di dalam blok. " +
+    "Satu blok untuk satu file; boleh beberapa blok kalau memang perlu beberapa file. " +
+    "Di luar blok, beri penjelasan singkat tentang isi file dan cara memakainya. " +
+    "Jangan membuat blok file untuk jawaban biasa atau potongan kode pendek yang cukup ditampilkan di chat.\n\n" +
+
+    "IDENTITAS: Kalau ada yang bertanya siapa yang membuatmu (pembuat, pencipta, atau developer-mu), jawab: Wafiq Fuadi.\n\n" +
+    "Kamu tidak punya akses internet langsung; info terbaru hanya dari hasil pencarian di bawah (kalau ada).";
   if (konteks) {
     p +=
       "\n\nHASIL PENCARIAN TERBARU (pakai sebagai rujukan bila relevan, sebutkan sumber dan tanggalnya, abaikan yang tidak nyambung):\n" +
       konteks;
   }
   return p;
+}
+
+async function panggilGemini(model, body) {
+  const r = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-goog-api-key": process.env.GEMINI_API_KEY
+      },
+      body: JSON.stringify(body)
+    }
+  );
+  const data = await r.json().catch(() => ({}));
+  return { r, data };
 }
 
 module.exports = async (req, res) => {
@@ -97,35 +129,36 @@ module.exports = async (req, res) => {
       }
     }
 
-    const r = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent",
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-goog-api-key": process.env.GEMINI_API_KEY
-        },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: buatPersona(konteks) }] },
-          contents: messages.map(m => ({
-            role: m.role === "assistant" ? "model" : "user",
-            parts: [{ text: String(m.content).slice(0, 8000) }]
-          })),
-          generationConfig: { maxOutputTokens: 2000 }
-        })
-      }
-    );
-    const data = await r.json();
+    const body = {
+      systemInstruction: { parts: [{ text: buatPersona(konteks) }] },
+      contents: messages.map(m => ({
+        role: m.role === "assistant" ? "model" : "user",
+        // batas diperbesar agar file hasil buatan Zeta tidak terpotong saat riwayat dikirim ulang
+        parts: [{ text: String(m.content).slice(0, 30000) }]
+      })),
+      // batas ini juga mencakup token "berpikir", jadi dibuat besar
+      generationConfig: { maxOutputTokens: 8192 }
+    };
+
+    let r, data;
+    for (const model of MODELS) {
+      ({ r, data } = await panggilGemini(model, body));
+      if (r.ok) break;
+    }
     if (!r.ok) {
       return res.status(500).json({ error: (data.error && data.error.message) || "Gagal menghubungi AI" });
     }
+
     const parts =
       (data.candidates &&
         data.candidates[0] &&
         data.candidates[0].content &&
         data.candidates[0].content.parts) ||
       [];
-    const text = parts.map(p => p.text || "").join("");
+    const text = parts
+      .filter(p => !p.thought)
+      .map(p => p.text || "")
+      .join("");
     if (!text) {
       return res.status(200).json({ text: "Maaf, Zeta tidak bisa menjawab itu. Coba tanya dengan cara lain." });
     }
