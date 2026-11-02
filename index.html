@@ -1,543 +1,1090 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Zeta - Asisten AI serbaguna</title>
+<title>Zeta</title>
 <style>
-  :root {
-    --ungu: #6d4aff;
-    --ungu-tua: #5836e0;
-    --bubble-ai: #f0edfb;
-    --teks: #1f1f2e;
-    --abu: #6b6b7b;
-    --garis: #e6e4ee;
-    --latar: #fafaf9;
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body {
-    display: flex; flex-direction: column;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--latar); color: var(--teks); font-size: 16px; line-height: 1.55;
-  }
-  header {
-    display: flex; align-items: center; gap: 14px;
-    padding: 16px 24px; background: #fff; border-bottom: 1px solid var(--garis);
-  }
-  .logo {
-    width: 42px; height: 42px; border-radius: 10px; background: var(--ungu); color: #fff;
-    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; flex: none;
-  }
-  .judul { font-weight: 700; font-size: 18px; line-height: 1.2; }
-  .sub { font-size: 13px; color: var(--abu); }
-  .spasi { flex: 1; }
-  #baru {
-    border: 1px solid var(--garis); background: #fff; color: var(--teks); border-radius: 10px;
-    padding: 8px 14px; font: inherit; font-size: 14px; cursor: pointer;
-  }
-  #baru:hover { background: #f4f2fb; }
+:root{--bg:#fafaf7;--card:#fff;--bd:#e5e7eb;--tx:#1f2328;--mut:#6b7280;--pri:#6d4aff;--bot:#f0eefc;--hov:#f3f2fb;--wm:#1a12b5;--cbg:rgba(0,0,0,.06);--lnk:#5a35e8}
+:root[data-theme=dark]{--bg:#14141a;--card:#1c1c24;--bd:#2c2c38;--tx:#e8e8ee;--mut:#9a9aaa;--bot:#26233d;--hov:#262633;--wm:#9b93ff;--cbg:rgba(255,255,255,.07);--lnk:#a99bff}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:row;overflow:hidden}
+button{font:inherit;color:inherit}
+.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-  #chat { flex: 1; overflow-y: auto; padding: 20px 16px 8px; scroll-behavior: smooth; }
-  .kolom { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+/* sidebar */
+#side{width:280px;flex:none;background:var(--card);border-right:1px solid var(--bd);display:flex;flex-direction:column;transition:margin-left .2s;height:100%}
+body:not(.side-open) #side{margin-left:-280px}
+#back{display:none}
+.sh{padding:12px;display:flex;flex-direction:column;gap:8px}
+.newb{display:flex;align-items:center;gap:8px;width:100%;border:0;background:var(--pri);color:#fff;border-radius:12px;padding:10px 12px;font-weight:600;cursor:pointer}
+.srch{display:flex;align-items:center;gap:8px;border:1px solid var(--bd);border-radius:12px;padding:0 10px;color:var(--mut)}
+.srch input{flex:1;border:0;background:none;outline:none;padding:9px 0;font:inherit;color:var(--tx);min-width:0}
+#list{flex:1;overflow-y:auto;padding:0 8px 8px}
+.gl{font-size:12px;color:var(--mut);padding:12px 8px 4px}
+.it{display:flex;align-items:center;gap:4px;border-radius:10px;padding:8px 8px 8px 10px;cursor:pointer}
+.it:hover,.it.on{background:var(--hov)}
+.it .tt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.act{display:none;gap:2px}
+.it:hover .act,.it.on .act{display:flex}
+@media(hover:none){.act{display:flex}}
+.sm{border:0;background:none;color:var(--mut);padding:4px;border-radius:8px;cursor:pointer;display:grid;place-items:center}
+.sm:hover{background:var(--bd);color:var(--tx)}
+.empty{color:var(--mut);font-size:14px;text-align:center;padding:24px 8px}
+.sf{border-top:1px solid var(--bd);padding:8px;display:flex;flex-direction:column;gap:2px}
+.mi{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;border-radius:10px;padding:9px 10px;cursor:pointer;text-align:left;font-size:14px}
+.mi:hover{background:var(--hov)}
 
-  .kosong { text-align: center; padding: 48px 8px 8px; }
-  .kosong h1 { margin: 0 0 6px; font-size: 26px; }
-  .kosong p { margin: 0 0 22px; color: var(--abu); }
-  .saran { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-  .saran button {
-    border: 1px solid var(--garis); background: #fff; color: var(--teks); border-radius: 999px;
-    padding: 9px 16px; font: inherit; font-size: 14px; cursor: pointer;
-  }
-  .saran button:hover { border-color: var(--ungu); color: var(--ungu); }
+/* main */
+#main{flex:1;min-width:0;height:100%;display:flex;flex-direction:column}
+header{padding:14px 18px;background:var(--card);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.ib{border:0;background:none;color:var(--tx);width:36px;height:36px;border-radius:10px;display:grid;place-items:center;cursor:pointer;flex:none}
+.ib:hover{background:var(--hov)}
+.logo{width:34px;height:34px;border-radius:10px;background:#6d4aff;color:#fff;display:grid;place-items:center;font-weight:700}
+img.logo{background:none;object-fit:contain}
+header span{display:block;font-size:12px;color:var(--mut)}
+.wm{font-family:"Arial Black","Segoe UI",Roboto,system-ui,sans-serif;font-weight:900;font-size:20px;letter-spacing:.06em;color:var(--wm);line-height:1.1}
+#log{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;max-width:760px;width:100%;margin:0 auto}
+.m{max-width:85%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;word-wrap:break-word}
+.u{align-self:flex-end;background:#6d4aff;color:#fff}
+.b{align-self:flex-start;background:var(--bot)}
+.hint{color:var(--mut);text-align:center;margin:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border-radius:10px;padding:4px 8px;font-size:13px;max-width:200px}
+.chip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip img{width:28px;height:28px;object-fit:cover;border-radius:6px}
 
-  .baris { display: flex; }
-  .baris.user { justify-content: flex-end; }
-  .bubble { padding: 12px 18px; border-radius: 20px; word-wrap: break-word; overflow-wrap: anywhere; }
-  .user .bubble { background: var(--ungu); color: #fff; max-width: 80%; white-space: pre-wrap; border-bottom-right-radius: 8px; }
-  .ai .bubble { background: var(--bubble-ai); max-width: 94%; border-bottom-left-radius: 8px; }
-  .galat .bubble { background: #fdecec; color: #8a1c1c; max-width: 94%; }
+/* jawaban Zeta: logo kecil + gelembung + tombol aksi */
+.br{align-self:flex-start;display:flex;gap:8px;align-items:flex-start;max-width:94%;min-width:0}
+.av{width:28px;height:28px;border-radius:9px;flex:none;margin-top:2px;object-fit:contain}
+.bw{min-width:0;max-width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.bw .m{max-width:100%;min-width:0}
+.acts{display:flex;gap:2px;padding-left:2px}
+.br.live .acts{display:none}
+.br:not(:last-child) .rg{display:none}
+.acts .sm{padding:5px}
+.st{color:var(--mut);font-size:13px;margin-top:6px;white-space:normal}
+.st:empty{display:none}
+.nt{color:var(--mut);font-size:13px;margin-top:8px;white-space:normal;border-top:1px dashed var(--bd);padding-top:6px}
 
-  .md > :first-child { margin-top: 0; }
-  .md > :last-child { margin-bottom: 0; }
-  .md p { margin: 0 0 10px; }
-  .md h1, .md h2, .md h3, .md h4 { margin: 16px 0 8px; line-height: 1.3; }
-  .md h1 { font-size: 1.4em; } .md h2 { font-size: 1.25em; } .md h3 { font-size: 1.1em; }
-  .md ul, .md ol { margin: 0 0 10px; padding-left: 24px; }
-  .md li { margin: 3px 0; }
-  .md a { color: var(--ungu-tua); }
-  .md hr { border: 0; border-top: 1px solid #d9d4ee; margin: 14px 0; }
-  .md blockquote { margin: 0 0 10px; padding: 2px 14px; border-left: 4px solid #cfc7ee; color: #4a4a5a; }
-  .md code { background: #e4dff7; padding: 1px 6px; border-radius: 5px; font-size: 0.9em; font-family: ui-monospace, Menlo, Consolas, monospace; }
-  .md pre { position: relative; background: #1e1e2e; color: #eaeaf5; padding: 14px 16px; border-radius: 12px; overflow-x: auto; margin: 0 0 12px; }
-  .md pre code { background: none; padding: 0; color: inherit; font-size: 0.88em; }
-  .md table { border-collapse: collapse; margin: 0 0 12px; display: block; overflow-x: auto; max-width: 100%; }
-  .md th, .md td { border: 1px solid #d3cde9; padding: 6px 12px; text-align: left; }
-  .md th { background: #e4dff7; }
-  .salin-kode {
-    position: absolute; top: 8px; right: 8px; border: 0; border-radius: 6px; padding: 4px 10px;
-    background: #3a3a52; color: #fff; font-size: 12px; cursor: pointer;
-  }
+/* isi jawaban (Markdown) */
+.md{white-space:normal;line-height:1.55}
+.md>:first-child{margin-top:0}
+.md>:last-child{margin-bottom:0}
+.md p{margin:0 0 .6em}
+.md h1,.md h2,.md h3,.md h4,.md h5,.md h6{margin:.9em 0 .4em;line-height:1.3}
+.md h1{font-size:1.3em}.md h2{font-size:1.18em}.md h3{font-size:1.07em}.md h4,.md h5,.md h6{font-size:1em}
+.md ul,.md ol{margin:.3em 0 .6em;padding-left:1.4em}
+.md li{margin:.15em 0}
+.md li>ul,.md li>ol{margin:.15em 0}
+.md a{color:var(--lnk);text-decoration:underline;word-break:break-word}
+.md hr{border:0;border-top:1px solid var(--bd);margin:.8em 0}
+.md blockquote{margin:.4em 0 .7em;padding:.1em 0 .1em 12px;border-left:3px solid var(--pri);color:var(--mut)}
+.md code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;background:var(--cbg);border-radius:6px;padding:.1em .35em}
+.cb{margin:.5em 0 .8em;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--cbg)}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 4px 12px;font-size:12px;color:var(--mut);border-bottom:1px solid var(--bd)}
+.cp{border:0;background:none;color:var(--mut);cursor:pointer;font-size:12px;padding:3px 8px;border-radius:8px}
+.cp:hover{background:var(--bd);color:var(--tx)}
+.cb pre{margin:0;padding:10px 12px;overflow-x:auto;white-space:pre;tab-size:2}
+.md .cb code{background:none;padding:0;font-size:13px;line-height:1.5;display:block}
+.tw{overflow-x:auto;margin:.5em 0 .8em;max-width:100%}
+.tw table{border-collapse:collapse;font-size:14px}
+.tw th,.tw td{border:1px solid var(--bd);padding:6px 10px;vertical-align:top;white-space:normal}
+.tw th{background:var(--cbg);font-weight:600;text-align:left}
 
-  .berkas { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-  .kartu {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    background: #fff; border: 1px solid #d9d4ee; border-radius: 14px; padding: 10px 14px;
-  }
-  .ikon { width: 38px; height: 38px; border-radius: 9px; background: #ece8fb; color: var(--ungu-tua);
-    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex: none; text-transform: uppercase; }
-  .info { flex: 1; min-width: 140px; }
-  .info .nama { font-weight: 600; word-break: break-all; }
-  .info .ukuran { font-size: 12px; color: var(--abu); }
-  .tombol { display: flex; gap: 8px; flex-wrap: wrap; }
-  .tombol button {
-    border: 1px solid var(--garis); background: #fff; color: var(--teks); border-radius: 9px;
-    padding: 7px 13px; font: inherit; font-size: 14px; cursor: pointer;
-  }
-  .tombol button.utama { background: var(--ungu); border-color: var(--ungu); color: #fff; font-weight: 600; }
-  .tombol button.utama:hover { background: var(--ungu-tua); }
-  .tombol button:disabled { opacity: .6; cursor: wait; }
-  .catatan { font-size: 13px; color: #8a5a00; margin-top: 8px; }
+/* kartu unduh file */
+.fc{display:flex;align-items:center;gap:10px;margin:.6em 0;padding:10px;border:1px solid var(--bd);border-radius:14px;background:var(--card);white-space:normal}
+.fi{width:40px;height:40px;border-radius:10px;background:var(--pri);color:#fff;display:grid;place-items:center;flex:none;font-size:11px;font-weight:700;letter-spacing:.03em}
+.fm{flex:1;min-width:0;display:flex;flex-direction:column}
+.fm b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fm span{font-size:12px;color:var(--mut)}
+.fb{border:0;background:var(--pri);color:#fff;border-radius:10px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;flex:none}
+.fb.gh{background:var(--hov);color:var(--tx);border:1px solid var(--bd)}
+.fb:disabled{opacity:.5;cursor:default}
+@media(max-width:520px){.fc{flex-wrap:wrap}.fm{flex-basis:calc(100% - 52px)}}
 
-  .titik { display: inline-flex; gap: 5px; padding: 4px 0; }
-  .titik i { width: 8px; height: 8px; border-radius: 50%; background: #9a8de0; animation: kedip 1.2s infinite ease-in-out; }
-  .titik i:nth-child(2) { animation-delay: .2s; } .titik i:nth-child(3) { animation-delay: .4s; }
-  @keyframes kedip { 0%, 80%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
+/* composer */
+footer{background:var(--card);border-top:1px solid var(--bd);padding:10px 14px}
+#pend{max-width:760px;margin:0 auto 8px;display:flex;flex-wrap:wrap;gap:6px}
+#pend:empty{display:none}
+#pend .chip{background:var(--hov);color:var(--tx);padding:4px 4px 4px 8px}
+.row{display:flex;gap:8px;max-width:760px;margin:0 auto;align-items:flex-end;position:relative}
+textarea{flex:1;resize:none;border:1px solid var(--bd);border-radius:14px;padding:10px 12px;font:inherit;background:var(--bg);color:var(--tx);max-height:160px;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none}
+textarea::-webkit-scrollbar{display:none}
+#send{border:0;background:#6d4aff;color:#fff;border-radius:14px;padding:0 18px;font-weight:600;cursor:pointer;height:44px}
+#send:disabled{opacity:.5}
+#plus{border:1px solid var(--bd);background:var(--card);border-radius:14px;width:44px;height:44px;display:grid;place-items:center;cursor:pointer;flex:none}
+#plus:hover{background:var(--hov)}
+#pm{display:none;position:absolute;left:0;bottom:52px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:6px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:5}
+#pm.open{display:block}
 
-  footer { padding: 12px 16px 16px; background: #fff; border-top: 1px solid var(--garis); }
-  .form { max-width: 960px; margin: 0 auto; display: flex; gap: 10px; align-items: flex-end; }
-  #input {
-    flex: 1; resize: none; border: 1px solid #d6d3e2; border-radius: 22px; padding: 13px 18px;
-    font: inherit; max-height: 160px; outline: none; background: #fff; color: var(--teks);
-  }
-  #input:focus { border-color: var(--ungu); box-shadow: 0 0 0 3px #6d4aff22; }
-  #kirim {
-    border: 0; background: var(--ungu); color: #fff; font: inherit; font-weight: 700;
-    border-radius: 22px; padding: 13px 24px; cursor: pointer; flex: none;
-  }
-  #kirim:hover { background: var(--ungu-tua); }
-  #kirim:disabled { opacity: .55; cursor: not-allowed; }
+/* dialog + toast */
+dialog{border:1px solid var(--bd);border-radius:16px;background:var(--card);color:var(--tx);padding:18px;max-width:420px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog h3{margin:0 0 12px;font-size:18px}
+dialog h4{margin:16px 0 6px;font-size:14px;color:var(--mut);font-weight:600}
+.seg{display:flex;gap:6px}
+.seg button,.dbtn{flex:1;border:1px solid var(--bd);background:var(--bg);border-radius:10px;padding:8px;cursor:pointer;font-size:14px}
+.seg button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.dbtn{width:100%;text-align:left;margin-bottom:6px}
+.dbtn.red{color:#d92d20}
+.close{margin-top:14px;width:100%;border:0;background:var(--pri);color:#fff;border-radius:12px;padding:10px;font-weight:600;cursor:pointer}
+dialog ul{margin:0;padding-left:18px;font-size:14px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#1f2328;color:#fff;padding:8px 14px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;max-width:90%}
+#toast.show{opacity:1}
 
-  @media (max-width: 600px) {
-    header { padding: 12px 14px; }
-    .user .bubble { max-width: 90%; }
-    .ai .bubble { max-width: 100%; }
-    #kirim { padding: 13px 18px; }
-  }
+@media(max-width:799px){
+  #side{position:fixed;left:0;top:0;bottom:0;z-index:30;box-shadow:0 0 30px rgba(0,0,0,.25)}
+  body.side-open #back{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20}
+}
 </style>
 </head>
-<body>
+<body class="side-open">
+<aside id="side">
+  <div class="sh">
+    <button class="newb" id="newb"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Chat baru</button>
+    <label class="srch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="q" placeholder="Cari chat" autocomplete="off"></label>
+  </div>
+  <div id="list"></div>
+  <div class="sf">
+    <button class="mi" id="bset"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Pengaturan</button>
+    <button class="mi" id="bhelp"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 .5c0 1.7-2.5 2-2.5 3.5M12 17h.01"/></svg>Bantuan</button>
+  </div>
+</aside>
+<div id="back"></div>
 
+<div id="main">
 <header>
-  <div class="logo">Z</div>
-  <div>
-    <div class="judul">Zeta</div>
-    <div class="sub">Asisten AI serbaguna</div>
-  </div>
-  <div class="spasi"></div>
-  <button id="baru" type="button" title="Mulai percakapan baru">Chat baru</button>
+  <button class="ib" id="menu" aria-label="Menu"><svg class="ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  <img class="logo" alt="Zeta AI" src="data:image/jpeg;base64,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"><div><b class="wm">ZETA AI</b><span>Asisten AI serbaguna</span></div>
+  <button class="ib" id="hnew" aria-label="Chat baru" style="margin-left:auto"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 </header>
-
-<main id="chat">
-  <div class="kolom" id="kolom">
-    <div class="kosong" id="kosong">
-      <h1>Halo, aku Zeta 👋</h1>
-      <p>Tanya apa saja, atau minta aku membuatkan file untukmu.</p>
-      <div class="saran" id="saran"></div>
-    </div>
-  </div>
-</main>
-
+<div id="log"><div class="hint" id="hint">Halo, aku Zeta. Tanya apa saja atau minta bantuan mengerjakan tugas.</div></div>
 <footer>
-  <div class="form">
-    <textarea id="input" rows="1" placeholder="Tulis pesan untuk Zeta..." autocomplete="off"></textarea>
-    <button id="kirim" type="button">Kirim</button>
+  <div id="pend"></div>
+  <div class="row">
+    <div id="pm">
+      <button class="mi" data-a="file"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8zM14 3v5h5"/></svg>Unggah file</button>
+      <button class="mi" data-a="photo"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L5 20"/></svg>Unggah foto</button>
+      <button class="mi" data-a="cam"><svg class="ic" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Ambil foto</button>
+      <button class="mi" data-a="edit"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20L16 8M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM19 12l.7 1.3L21 14l-1.3.7L19 16l-.7-1.3L17 14l1.3-.7z"/></svg>Edit foto</button>
+    </div>
+    <button id="plus" aria-label="Tambah lampiran"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    <textarea id="in" rows="1" placeholder="Tulis pesan untuk Zeta…"></textarea>
+    <button id="send">Kirim</button>
   </div>
 </footer>
+</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<input type="file" id="fFile" hidden multiple accept=".txt,.md,.csv,.json,.js,.ts,.py,.html,.css,.xml,.yml,.yaml,.log,.sql,.java,.c,.cpp,.php,text/*">
+<input type="file" id="fImg" hidden multiple accept="image/*">
+<input type="file" id="fCam" hidden accept="image/*" capture="environment">
+
+<dialog id="dSet">
+  <h3>Pengaturan</h3>
+  <h4>Tema</h4>
+  <div class="seg" id="seg"><button data-t="auto">Otomatis</button><button data-t="light">Terang</button><button data-t="dark">Gelap</button></div>
+  <h4>Data</h4>
+  <button class="dbtn" id="bexp">Ekspor riwayat (JSON)</button>
+  <button class="dbtn red" id="bclr">Hapus semua riwayat</button>
+  <button class="close" data-close>Selesai</button>
+</dialog>
+<dialog id="dHelp">
+  <h3>Bantuan</h3>
+  <ul>
+    <li>Enter untuk kirim, Shift+Enter untuk baris baru.</li>
+    <li>Tombol + di kolom pesan untuk unggah file, unggah foto, ambil foto, atau edit foto.</li>
+    <li>File teks yang bisa dibaca: txt, md, csv, json, dan kode (maks 100 KB).</li>
+    <li>Saat Zeta menjawab, tombol Kirim berubah menjadi Berhenti. Di bawah jawaban ada tombol salin dan ulangi.</li>
+    <li>Kalau Zeta membuat file (PDF, Word, Excel, dan lainnya), muncul kartu dengan tombol Unduh.</li>
+    <li>Riwayat chat tersimpan di perangkat ini saja.</li>
+  </ul>
+  <button class="close" data-close>Tutup</button>
+</dialog>
+<div id="toast"></div>
+
 <script>
-(function () {
-  "use strict";
+/* ===== PEMBUAT FILE & MARKDOWN (tanpa pustaka luar) ===== */
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-  var URL_XLSX = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
-  var URL_PDF = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-
-  var chat = document.getElementById("chat");
-  var kolom = document.getElementById("kolom");
-  var kosong = document.getElementById("kosong");
-  var input = document.getElementById("input");
-  var tombolKirim = document.getElementById("kirim");
-  var riwayat = [];
-  var sedangKirim = false;
-
-  var SARAN = [
-    "Berita terbaru hari ini",
-    "Cuaca Jakarta hari ini",
-    "Buatkan website profil sederhana dalam satu file HTML",
-    "Buatkan jadwal belajar mingguan dalam Excel",
-    "Jelaskan cara kerja AI dengan bahasa sederhana"
-  ];
-
-  function esc(s) {
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  }
-
-  /* ---------- Markdown ---------- */
-  function renderMd(md) {
-    if (window.marked && window.DOMPurify) {
-      try {
-        var html = window.marked.parse(md, { breaks: true, gfm: true });
-        return window.DOMPurify.sanitize(html);
-      } catch (e) { /* jatuh ke teks biasa */ }
+/* --- Markdown: inline --- */
+function parseInline(s,st){
+  st=st||{};const out=[];let buf="";
+  const flush=()=>{if(buf){out.push(Object.assign({t:"text",s:buf},st));buf=""}};
+  let i=0;
+  while(i<s.length){
+    const c=s[i];
+    if(c==="\\"&&i+1<s.length&&/[\\`*_{}\[\]()#+\-.!|~>]/.test(s[i+1])){buf+=s[i+1];i+=2;continue}
+    if(c==="`"){const j=s.indexOf("`",i+1);if(j>i+1){flush();out.push(Object.assign({t:"code",s:s.slice(i+1,j)},st));i=j+1;continue}}
+    if(c==="["){
+      const m=/^\[([^\]\n]+)\]\(\s*(https?:\/\/[^\s)]+|mailto:[^\s)]+)(?:\s+"[^"]*")?\s*\)/.exec(s.slice(i));
+      if(m){flush();parseInline(m[1],st).forEach(r=>{r.href=m[2];out.push(r)});i+=m[0].length;continue}
     }
-    return esc(md).replace(/\n/g, "<br>");
-  }
-
-  function percantik(el) {
-    var links = el.querySelectorAll("a");
-    for (var i = 0; i < links.length; i++) {
-      links[i].target = "_blank";
-      links[i].rel = "noopener noreferrer";
+    if((c==="*"||c==="_")&&s[i+1]===c){
+      const j=s.indexOf(c+c,i+2);
+      if(j>i+2&&(c==="*"||!/\w/.test(s[i-1]||" "))){flush();parseInline(s.slice(i+2,j),Object.assign({},st,{b:true})).forEach(r=>out.push(r));i=j+2;continue}
     }
-    var pres = el.querySelectorAll("pre");
-    pres.forEach(function (pre) {
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "salin-kode"; b.textContent = "Salin";
-      b.addEventListener("click", function () {
-        var code = pre.querySelector("code");
-        salinTeks((code || pre).innerText, b);
-      });
-      pre.appendChild(b);
-    });
-  }
-
-  function salinTeks(teks, tombol) {
-    var asli = tombol.textContent;
-    function selesai(ok) {
-      tombol.textContent = ok ? "Tersalin" : "Gagal";
-      setTimeout(function () { tombol.textContent = asli; }, 1500);
+    if(c==="~"&&s[i+1]==="~"){
+      const j=s.indexOf("~~",i+2);
+      if(j>i+2){flush();parseInline(s.slice(i+2,j),Object.assign({},st,{x:true})).forEach(r=>out.push(r));i=j+2;continue}
     }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(teks).then(function () { selesai(true); }, function () { selesai(false); });
-    } else {
-      var t = document.createElement("textarea");
-      t.value = teks; document.body.appendChild(t); t.select();
-      var ok = false;
-      try { ok = document.execCommand("copy"); } catch (e) {}
-      t.remove(); selesai(ok);
+    if((c==="*"||c==="_")&&s[i+1]!==c&&s[i+1]!==undefined&&s[i+1]!==" "&&(c==="*"||!/\w/.test(s[i-1]||" "))){
+      let j=i+1;
+      while((j=s.indexOf(c,j))!==-1){
+        if(s[j-1]!==" "&&s[j+1]!==c&&(c==="*"||!/\w/.test(s[j+1]||" ")))break;
+        j++;
+      }
+      if(j>i+1){flush();parseInline(s.slice(i+1,j),Object.assign({},st,{i:true})).forEach(r=>out.push(r));i=j+1;continue}
+    }
+    if(c==="h"&&(s.startsWith("http://",i)||s.startsWith("https://",i))&&!/\w/.test(s[i-1]||" ")){
+      let u=/^https?:\/\/[^\s<>"]+/.exec(s.slice(i))[0];
+      u=u.replace(/[.,;:!?]+$/,"");
+      while(u.endsWith(")")&&(u.match(/\)/g)||[]).length>(u.match(/\(/g)||[]).length)u=u.slice(0,-1);
+      if(u.length>8){flush();out.push(Object.assign({t:"text",s:u,href:u},st));i+=u.length;continue}
+    }
+    buf+=c;i++;
+  }
+  flush();return out;
+}
+
+/* --- Markdown: blok --- */
+function splitRow(r){
+  let t=r.trim();if(t[0]==="|")t=t.slice(1);
+  const out=[];let cur="";
+  for(let k=0;k<t.length;k++){
+    const ch=t[k];
+    if(ch==="\\"&&t[k+1]==="|"){cur+="|";k++}
+    else if(ch==="|"){out.push(cur.trim());cur=""}
+    else cur+=ch;
+  }
+  out.push(cur.trim());
+  if(out.length>1&&out[out.length-1]===""&&/\|\s*$/.test(r.trim()))out.pop();
+  return out;
+}
+const isSep=l=>l.includes("|")&&l.includes("-")&&/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(l);
+
+function parseBlocks(src){
+  const L=String(src).replace(/\r\n?/g,"\n").split("\n"),B=[];
+  let i=0,para=[],indents=[];
+  const push=b=>{if(b.t!=="li")indents=[];B.push(b)};
+  const flushP=()=>{if(para.length){push({t:"p",raw:para.join("\n")});para=[]}};
+  while(i<L.length){
+    const l=L[i];let m;
+    if((m=/^\s*(```|~~~)\s*([^\s`]*)/.exec(l))){
+      flushP();const code=[];i++;
+      while(i<L.length&&!/^\s*(```|~~~)\s*$/.test(L[i])){code.push(L[i]);i++}
+      i++;push({t:"code",lang:m[2],text:code.join("\n")});continue;
+    }
+    if(!l.trim()){flushP();i++;continue}
+    if((m=/^\s{0,3}(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/.exec(l))){flushP();push({t:"h",n:m[1].length,raw:m[2]});i++;continue}
+    if(/^\s{0,3}([-*_])(?:\s*\1){2,}\s*$/.test(l)){flushP();push({t:"hr"});i++;continue}
+    if(l.includes("|")&&i+1<L.length&&isSep(L[i+1])){
+      flushP();
+      const head=splitRow(l),sep=splitRow(L[i+1]);
+      const align=head.map((_,k)=>{const c=(sep[k]||"").trim();return c.startsWith(":")&&c.endsWith(":")?"center":c.endsWith(":")?"right":"left"});
+      i+=2;const rows=[];
+      while(i<L.length&&L[i].trim()&&L[i].includes("|")){
+        const r=splitRow(L[i]);while(r.length<head.length)r.push("");
+        rows.push(r.slice(0,head.length));i++;
+      }
+      push({t:"table",align,head:head.map(c=>parseInline(c)),rows:rows.map(r=>r.map(c=>parseInline(c)))});continue;
+    }
+    if((m=/^\s{0,3}>\s?(.*)$/.exec(l))){
+      flushP();const q=[m[1]];i++;
+      while(i<L.length&&(m=/^\s{0,3}>\s?(.*)$/.exec(L[i]))){q.push(m[1]);i++}
+      push({t:"quote",raw:q.join("\n")});continue;
+    }
+    if((m=/^(\s*)([-+*•]|\d{1,3}[.)])\s+(.*)$/.exec(l))){
+      flushP();
+      const ind=m[1].replace(/\t/g,"    ").length;
+      while(indents.length&&indents[indents.length-1]>ind)indents.pop();
+      if(!indents.length||indents[indents.length-1]<ind)indents.push(ind);
+      push({t:"li",level:indents.length-1,ord:/\d/.test(m[2]),num:parseInt(m[2],10)||1,raw:m[3]});i++;continue;
+    }
+    const last=B[B.length-1];
+    if(!para.length&&last&&last.t==="li"&&/^\s{2,}\S/.test(l)){last.raw+=" "+l.trim();i++;continue}
+    para.push(l.trim());i++;
+  }
+  flushP();
+  B.forEach(b=>{if(b.raw!==undefined)b.inl=parseInline(b.raw)});
+  return B;
+}
+
+/* --- Markdown -> HTML (aman: semua teks di-escape) --- */
+function runHtml(r){
+  let h=esc(r.s);
+  if(r.t==="code")h="<code>"+h+"</code>";
+  if(r.b)h="<strong>"+h+"</strong>";
+  if(r.i)h="<em>"+h+"</em>";
+  if(r.x)h="<s>"+h+"</s>";
+  if(r.href)h='<a href="'+esc(r.href)+'" target="_blank" rel="noopener noreferrer">'+h+"</a>";
+  return h;
+}
+const inlHtml=runs=>runs.map(runHtml).join("").replace(/\n/g,"<br>");
+function listHtml(items){
+  let h="";const st=[];
+  for(const it of items){
+    const tag=it.ord?"ol":"ul",d=Math.min(it.level,st.length);
+    while(st.length>d+1)h+="</li></"+st.pop()+">";
+    if(st.length===d+1){
+      h+="</li>";
+      if(st[d]!==tag){h+="</"+st.pop()+">";h+=openList(tag,it);st.push(tag)}
+    }else{h+=openList(tag,it);st.push(tag)}
+    h+="<li>"+inlHtml(it.inl);
+  }
+  while(st.length)h+="</li></"+st.pop()+">";
+  return h;
+}
+const openList=(tag,it)=>tag==="ol"&&it.num!==1?'<ol start="'+it.num+'">':"<"+tag+">";
+function mdHtml(blocks){
+  let h="",k=0;
+  while(k<blocks.length){
+    const b=blocks[k];
+    if(b.t==="li"){const g=[];while(k<blocks.length&&blocks[k].t==="li")g.push(blocks[k++]);h+=listHtml(g);continue}
+    k++;
+    if(b.t==="h")h+="<h"+b.n+">"+inlHtml(b.inl)+"</h"+b.n+">";
+    else if(b.t==="p")h+="<p>"+inlHtml(b.inl)+"</p>";
+    else if(b.t==="hr")h+="<hr>";
+    else if(b.t==="quote")h+="<blockquote>"+inlHtml(b.inl)+"</blockquote>";
+    else if(b.t==="code")h+='<div class="cb"><div class="ch"><span>'+esc(b.lang||"kode")+'</span><button class="cp" type="button">Salin</button></div><pre><code>'+esc(b.text)+"</code></pre></div>";
+    else if(b.t==="table"){
+      h+='<div class="tw"><table><thead><tr>'+b.head.map((c,j)=>'<th style="text-align:'+b.align[j]+'">'+inlHtml(c)+"</th>").join("")+"</tr></thead><tbody>"+
+        b.rows.map(r=>"<tr>"+r.map((c,j)=>'<td style="text-align:'+b.align[j]+'">'+inlHtml(c)+"</td>").join("")+"</tr>").join("")+"</tbody></table></div>";
     }
   }
+  return h;
+}
 
-  /* ---------- Blok file [[FILE: nama]] ... [[/FILE]] ---------- */
-  var POLA_FILE = /\[\[FILE:\s*([^\]\n]+?)\s*\]\]\r?\n?([\s\S]*?)(?:\r?\n?\[\[\/FILE\]\]|$)/g;
-
-  function namaAman(n) {
-    n = String(n).replace(/[\\\/:*?"<>|\r\n]/g, "-").trim().slice(0, 100);
-    if (!n) n = "file";
-    if (!/\.[A-Za-z0-9]{1,6}$/.test(n)) n += ".txt";
-    return n;
-  }
-
-  function lepasPagar(isi) {
-    var m = isi.match(/^\s*```[\w+-]*\r?\n([\s\S]*?)\r?\n```\s*$/);
-    return m ? m[1] : isi;
-  }
-
-  function pisahFile(teks) {
-    var files = [], bersih = "", idx = 0, m;
-    POLA_FILE.lastIndex = 0;
-    while ((m = POLA_FILE.exec(teks)) !== null) {
-      bersih += teks.slice(idx, m.index);
-      files.push({
-        nama: namaAman(m[1]),
-        isi: lepasPagar(m[2]),
-        utuh: /\[\[\/FILE\]\]$/.test(m[0])
-      });
-      idx = m.index + m[0].length;
-      if (m[0].length === 0) POLA_FILE.lastIndex++;
-    }
-    bersih += teks.slice(idx);
-    return { teks: bersih.trim(), files: files };
-  }
-
-  /* ---------- Unduh file ---------- */
-  var MIME = {
-    html: "text/html", htm: "text/html", css: "text/css", js: "text/javascript", json: "application/json",
-    csv: "text/csv", md: "text/markdown", txt: "text/plain", svg: "image/svg+xml", xml: "application/xml",
-    py: "text/x-python", java: "text/x-java", c: "text/x-c", cpp: "text/x-c++", php: "text/x-php", sql: "text/plain"
-  };
-
-  function ekstensi(nama) {
-    var p = nama.split(".");
-    return p.length > 1 ? p.pop().toLowerCase() : "";
-  }
-
-  function simpanBlob(blob, nama) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url; a.download = nama;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
-  }
-
-  var _skrip = {};
-  function muatSkrip(url) {
-    if (!_skrip[url]) {
-      _skrip[url] = new Promise(function (ok, gagal) {
-        var s = document.createElement("script");
-        s.src = url; s.onload = ok;
-        s.onerror = function () { delete _skrip[url]; gagal(new Error("Gagal memuat pustaka")); };
-        document.head.appendChild(s);
-      });
-    }
-    return _skrip[url];
-  }
-
-  function unduhDoc(f) {
-    var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
-      '<head><meta charset="utf-8"><title>' + esc(f.nama) + '</title>' +
-      '<style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.4}table{border-collapse:collapse}td,th{border:1px solid #999;padding:4px 8px}</style>' +
-      '</head><body>' + renderMd(f.isi) + '</body></html>';
-    simpanBlob(new Blob(["\ufeff" + html], { type: "application/msword" }), f.nama.replace(/\.docx$/i, ".doc"));
-  }
-
-  function unduhXlsx(f) {
-    return muatSkrip(URL_XLSX).then(function () {
-      var wb = window.XLSX.read(f.isi, { type: "string" });
-      window.XLSX.writeFile(wb, f.nama.replace(/\.xls$/i, ".xlsx"));
-    });
-  }
-
-  function unduhPdf(f) {
-    return muatSkrip(URL_PDF).then(function () {
-      var el = document.createElement("div");
-      el.style.cssText = "width:700px;padding:24px;background:#fff;color:#111;font:14px/1.6 Arial,sans-serif";
-      el.innerHTML = renderMd(f.isi);
-      return window.html2pdf().set({
-        margin: 12, filename: f.nama,
-        image: { type: "jpeg", quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-      }).from(el).save();
-    });
-  }
-
-  function unduh(f, tombol) {
-    var ext = ekstensi(f.nama);
-    var kerja;
-    if (ext === "pdf") kerja = unduhPdf(f);
-    else if (ext === "xlsx" || ext === "xls") kerja = unduhXlsx(f);
-    else if (ext === "docx") kerja = Promise.resolve(unduhDoc(f));
-    else {
-      simpanBlob(new Blob([f.isi], { type: (MIME[ext] || "text/plain") + ";charset=utf-8" }), f.nama);
-      return;
-    }
-    var label = tombol.textContent;
-    tombol.disabled = true; tombol.textContent = "Menyiapkan...";
-    kerja.catch(function (e) {
-      alert("Gagal membuat file " + ext.toUpperCase() + " (" + e.message + "). File diunduh sebagai teks biasa.");
-      simpanBlob(new Blob([f.isi], { type: "text/plain;charset=utf-8" }), f.nama + ".txt");
-    }).then(function () {
-      tombol.disabled = false; tombol.textContent = label;
-    });
-  }
-
-  function formatUkuran(n) {
-    if (n < 1024) return n + " B";
-    if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
-    return (n / 1048576).toFixed(1) + " MB";
-  }
-
-  function buatKartu(f) {
-    var ext = ekstensi(f.nama);
-    var kartu = document.createElement("div");
-    kartu.className = "kartu";
-
-    var ikon = document.createElement("div");
-    ikon.className = "ikon"; ikon.textContent = (ext || "file").slice(0, 4);
-
-    var info = document.createElement("div");
-    info.className = "info";
-    var nm = document.createElement("div"); nm.className = "nama"; nm.textContent = f.nama;
-    var uk = document.createElement("div"); uk.className = "ukuran";
-    uk.textContent = formatUkuran(new Blob([f.isi]).size) + (f.utuh ? "" : " · terpotong");
-    info.appendChild(nm); info.appendChild(uk);
-
-    var tb = document.createElement("div");
-    tb.className = "tombol";
-
-    var bUnduh = document.createElement("button");
-    bUnduh.type = "button"; bUnduh.className = "utama"; bUnduh.textContent = "Unduh";
-    bUnduh.addEventListener("click", function () { unduh(f, bUnduh); });
-    tb.appendChild(bUnduh);
-
-    if (ext === "html" || ext === "htm" || ext === "svg") {
-      var bBuka = document.createElement("button");
-      bBuka.type = "button"; bBuka.textContent = "Buka";
-      bBuka.addEventListener("click", function () {
-        var url = URL.createObjectURL(new Blob([f.isi], { type: (MIME[ext] || "text/html") + ";charset=utf-8" }));
-        window.open(url, "_blank", "noopener");
-        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-      });
-      tb.appendChild(bBuka);
-    }
-
-    var bSalin = document.createElement("button");
-    bSalin.type = "button"; bSalin.textContent = "Salin";
-    bSalin.addEventListener("click", function () { salinTeks(f.isi, bSalin); });
-    tb.appendChild(bSalin);
-
-    kartu.appendChild(ikon); kartu.appendChild(info); kartu.appendChild(tb);
-    return kartu;
-  }
-
-  /* ---------- Tampilan pesan ---------- */
-  function sembunyikanKosong() {
-    if (kosong && kosong.parentNode) { kosong.remove(); kosong = null; }
-  }
-
-  function turunKeBawah() { chat.scrollTop = chat.scrollHeight; }
-
-  function tambahUser(teks) {
-    var baris = document.createElement("div"); baris.className = "baris user";
-    var b = document.createElement("div"); b.className = "bubble"; b.textContent = teks;
-    baris.appendChild(b); kolom.appendChild(baris);
-    turunKeBawah();
-  }
-
-  function tambahAI(teks, terpotong) {
-    var hasil = pisahFile(teks);
-    var baris = document.createElement("div"); baris.className = "baris ai";
-    var b = document.createElement("div"); b.className = "bubble";
-
-    if (hasil.teks) {
-      var md = document.createElement("div"); md.className = "md";
-      md.innerHTML = renderMd(hasil.teks);
-      percantik(md);
-      b.appendChild(md);
-    }
-    if (hasil.files.length) {
-      var wadah = document.createElement("div"); wadah.className = "berkas";
-      hasil.files.forEach(function (f) { wadah.appendChild(buatKartu(f)); });
-      b.appendChild(wadah);
-    }
-    if (terpotong) {
-      var c = document.createElement("div"); c.className = "catatan";
-      c.textContent = 'Jawaban terpotong karena terlalu panjang. Ketik "lanjutkan" untuk melanjutkan.';
-      b.appendChild(c);
-    }
-    if (!hasil.teks && !hasil.files.length) b.textContent = "(kosong)";
-
-    baris.appendChild(b); kolom.appendChild(baris);
-    // tampilkan dari awal jawaban agar enak dibaca
-    baris.scrollIntoView({ block: "start", behavior: "smooth" });
-  }
-
-  function tambahGalat(pesan) {
-    var baris = document.createElement("div"); baris.className = "baris galat";
-    var b = document.createElement("div"); b.className = "bubble"; b.textContent = pesan;
-    baris.appendChild(b); kolom.appendChild(baris);
-    turunKeBawah();
-  }
-
-  function tambahLoading() {
-    var baris = document.createElement("div"); baris.className = "baris ai";
-    var b = document.createElement("div"); b.className = "bubble";
-    b.innerHTML = '<span class="titik"><i></i><i></i><i></i></span>';
-    baris.appendChild(b); kolom.appendChild(baris);
-    turunKeBawah();
-    return baris;
-  }
-
-  /* ---------- Kirim pesan ---------- */
-  function potongRiwayat() {
-    while (riwayat.length > 38) riwayat.shift();
-    while (riwayat.length && riwayat[0].role !== "user") riwayat.shift();
-  }
-
-  function aturInput() {
-    input.style.height = "auto";
-    input.style.height = Math.min(input.scrollHeight, 160) + "px";
-  }
-
-  function kirim(teks) {
-    teks = String(teks || "").trim();
-    if (!teks || sedangKirim) return;
-
-    sembunyikanKosong();
-    tambahUser(teks);
-    riwayat.push({ role: "user", content: teks });
-    potongRiwayat();
-
-    input.value = ""; aturInput();
-    sedangKirim = true; tombolKirim.disabled = true;
-    var loading = tambahLoading();
-
-    fetch("/api/chat", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ messages: riwayat })
-    })
-      .then(function (r) {
-        return r.json().catch(function () { return {}; }).then(function (data) {
-          if (!r.ok) throw new Error(data.error || "Terjadi gangguan (" + r.status + ")");
-          return data;
-        });
-      })
-      .then(function (data) {
-        loading.remove();
-        riwayat.push({ role: "assistant", content: data.text });
-        tambahAI(data.text, data.terpotong);
-      })
-      .catch(function (e) {
-        loading.remove();
-        riwayat.pop();
-        tambahGalat(e.message || "Gagal terhubung. Coba lagi.");
-        input.value = teks; aturInput();
-      })
-      .then(function () {
-        sedangKirim = false; tombolKirim.disabled = false; input.focus();
-      });
-  }
-
-  function chatBaru() {
-    if (sedangKirim) return;
-    riwayat = [];
-    kolom.innerHTML = "";
-    kosong = document.createElement("div");
-    kosong.className = "kosong"; kosong.id = "kosong";
-    kosong.innerHTML = '<h1>Halo, aku Zeta 👋</h1><p>Tanya apa saja, atau minta aku membuatkan file untukmu.</p><div class="saran" id="saran"></div>';
-    kolom.appendChild(kosong);
-    isiSaran();
-    input.focus();
-  }
-
-  function isiSaran() {
-    var w = document.getElementById("saran");
-    if (!w) return;
-    SARAN.forEach(function (s) {
-      var b = document.createElement("button");
-      b.type = "button"; b.textContent = s;
-      b.addEventListener("click", function () { kirim(s); });
-      w.appendChild(b);
-    });
-  }
-
-  input.addEventListener("input", aturInput);
-  input.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
-      e.preventDefault();
-      kirim(input.value);
-    }
+/* --- ZIP (tanpa kompresi) untuk DOCX dan XLSX --- */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+const utf8=s=>new TextEncoder().encode(s);
+function zipStore(files){
+  const now=new Date(),dt=((now.getFullYear()-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate(),tm=(now.getHours()<<11)|(now.getMinutes()<<5)|(now.getSeconds()>>1);
+  const parts=[],cen=[];let off=0;
+  files.forEach(f=>{
+    const name=utf8(f.name),data=typeof f.data==="string"?utf8(f.data):f.data,crc=crc32(data);
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(8,0,true);
+    lh.setUint16(10,tm,true);lh.setUint16(12,dt,true);lh.setUint32(14,crc,true);lh.setUint32(18,data.length,true);lh.setUint32(22,data.length,true);
+    lh.setUint16(26,name.length,true);lh.setUint16(28,0,true);
+    parts.push(new Uint8Array(lh.buffer),name,data);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(10,0,true);
+    ch.setUint16(12,tm,true);ch.setUint16(14,dt,true);ch.setUint32(16,crc,true);ch.setUint32(20,data.length,true);ch.setUint32(24,data.length,true);
+    ch.setUint16(28,name.length,true);ch.setUint32(42,off,true);
+    cen.push(new Uint8Array(ch.buffer),name);
+    off+=30+name.length+data.length;
   });
-  tombolKirim.addEventListener("click", function () { kirim(input.value); });
-  document.getElementById("baru").addEventListener("click", chatBaru);
+  const cs=cen.reduce((a,p)=>a+p.length,0),end=new DataView(new ArrayBuffer(22));
+  end.setUint32(0,0x06054b50,true);end.setUint16(8,files.length,true);end.setUint16(10,files.length,true);end.setUint32(12,cs,true);end.setUint32(16,off,true);
+  const all=parts.concat(cen,[new Uint8Array(end.buffer)]),tot=all.reduce((a,p)=>a+p.length,0),out=new Uint8Array(tot);
+  let o=0;all.forEach(p=>{out.set(p,o);o+=p.length});return out;
+}
+const xe=s=>String(s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const xa=s=>xe(s).replace(/"/g,"&quot;");
+const XMLH='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 
-  isiSaran();
-  input.focus();
-})();
+/* --- DOCX --- */
+function makeDocx(md){
+  const B=parseBlocks(md),links=[],nums=[];
+  const rel=u=>{let k=links.indexOf(u);if(k<0){links.push(u);k=links.length-1}return"rIdL"+k};
+  const runsXml=(runs,ex)=>runs.map(r=>{
+    let p="";
+    if(r.t==="code")p+='<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas" w:cs="Consolas"/>';
+    if(r.b||(ex&&ex.b))p+="<w:b/>";
+    if(r.i)p+="<w:i/>";
+    if(r.x)p+="<w:strike/>";
+    if(r.href)p+='<w:color w:val="0563C1"/>';
+    if(r.t==="code")p+='<w:sz w:val="20"/>';
+    if(r.href)p+='<w:u w:val="single"/>';
+    if(r.t==="code")p+='<w:shd w:val="clear" w:color="auto" w:fill="EEEEEE"/>';
+    const lines=String(r.s).split("\n");
+    const inner=lines.map((t,k)=>(k?"<w:br/>":"")+'<w:t xml:space="preserve">'+xe(t)+"</w:t>").join("");
+    const run="<w:r>"+(p?"<w:rPr>"+p+"</w:rPr>":"")+inner+"</w:r>";
+    return r.href?'<w:hyperlink r:id="'+rel(r.href)+'" w:history="1">'+run+"</w:hyperlink>":run;
+  }).join("");
+  let body="",k=0,prev=null;
+  while(k<B.length){
+    const b=B[k++];
+    if(b.t==="h")body+='<w:p><w:pPr><w:pStyle w:val="Heading'+Math.min(b.n,6)+'"/></w:pPr>'+runsXml(b.inl)+"</w:p>";
+    else if(b.t==="p")body+="<w:p>"+runsXml(b.inl)+"</w:p>";
+    else if(b.t==="li"){
+      let id=1;
+      if(b.ord){
+        if(!prev||prev.t!=="li"||(b.level===0&&!prev.ord&&prev.level===0)||!nums.length)nums.push(1);
+        id=nums.length+1;
+      }
+      body+='<w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="'+Math.min(b.level,5)+'"/><w:numId w:val="'+id+'"/></w:numPr></w:pPr>'+runsXml(b.inl)+"</w:p>";
+    }
+    else if(b.t==="code")b.text.split("\n").forEach(ln=>{body+='<w:p><w:pPr><w:pStyle w:val="Code"/></w:pPr><w:r><w:t xml:space="preserve">'+xe(ln)+"</w:t></w:r></w:p>"});
+    else if(b.t==="quote")body+='<w:p><w:pPr><w:pStyle w:val="Quote"/></w:pPr>'+runsXml(b.inl)+"</w:p>";
+    else if(b.t==="hr")body+='<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="999999"/></w:pBdr></w:pPr></w:p>';
+    else if(b.t==="table"){
+      const n=b.head.length,TOT=9026;
+      const wt=b.head.map((_,j)=>Math.max(8,Math.min(50,Math.max.apply(null,[b.head[j]].concat(b.rows.map(r=>r[j])).map(c=>c.reduce((a,r)=>a+r.s.length,0))))));
+      const sum=wt.reduce((a,x)=>a+x,0),w=wt.map(x=>Math.floor(x/sum*TOT));
+      const cell=(c,j,hd)=>'<w:tc><w:tcPr><w:tcW w:w="'+w[j]+'" w:type="dxa"/>'+(hd?'<w:shd w:val="clear" w:color="auto" w:fill="E7E6F7"/>':"")+'</w:tcPr><w:p><w:pPr><w:spacing w:before="40" w:after="40"/>'+(b.align[j]==="right"?'<w:jc w:val="right"/>':b.align[j]==="center"?'<w:jc w:val="center"/>':"")+"</w:pPr>"+runsXml(c,hd?{b:true}:null)+"</w:p></w:tc>";
+      body+='<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:w="'+TOT+'" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>'+w.map(x=>'<w:gridCol w:w="'+x+'"/>').join("")+"</w:tblGrid>"+
+        '<w:tr><w:trPr><w:tblHeader/></w:trPr>'+b.head.map((c,j)=>cell(c,j,true)).join("")+"</w:tr>"+
+        b.rows.map(r=>"<w:tr>"+r.map((c,j)=>cell(c,j,false)).join("")+"</w:tr>").join("")+"</w:tbl><w:p/>";
+    }
+    prev=b;
+  }
+  if(!body)body="<w:p/>";
+  const NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+  const doc=XMLH+"<w:document "+NS+"><w:body>"+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  const hs=[[1,32],[2,28],[3,26],[4,24],[5,22],[6,22]].map(h=>'<w:style w:type="paragraph" w:styleId="Heading'+h[0]+'"><w:name w:val="heading '+h[0]+'"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="80"/><w:outlineLvl w:val="'+(h[0]-1)+'"/></w:pPr><w:rPr><w:b/><w:color w:val="1F3864"/><w:sz w:val="'+h[1]+'"/></w:rPr></w:style>').join("");
+  const styles=XMLH+"<w:styles "+NS+'><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="id-ID"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>'+
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>'+hs+
+    '<w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="60"/><w:contextualSpacing/></w:pPr></w:style>'+
+    '<w:style w:type="paragraph" w:styleId="Code"><w:name w:val="Code"/><w:basedOn w:val="Normal"/><w:pPr><w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:ind w:left="120" w:right="120"/></w:pPr><w:rPr><w:rFonts w:ascii="Consolas" w:hAnsi="Consolas" w:cs="Consolas"/><w:sz w:val="19"/></w:rPr></w:style>'+
+    '<w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:basedOn w:val="Normal"/><w:pPr><w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="6D4AFF"/></w:pBdr><w:ind w:left="360"/></w:pPr><w:rPr><w:i/><w:color w:val="555555"/></w:rPr></w:style>'+
+    '<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:uiPriority w:val="99"/><w:semiHidden/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>'+
+    '<w:style w:type="table" w:styleId="TableGrid"><w:name w:val="Table Grid"/><w:basedOn w:val="TableNormal"/><w:tblPr><w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="BBBBBB"/><w:left w:val="single" w:sz="4" w:space="0" w:color="BBBBBB"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="BBBBBB"/><w:right w:val="single" w:sz="4" w:space="0" w:color="BBBBBB"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="BBBBBB"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="BBBBBB"/></w:tblBorders></w:tblPr></w:style></w:styles>';
+  const lvls=(ord)=>[0,1,2,3,4,5].map(l=>'<w:lvl w:ilvl="'+l+'"><w:start w:val="1"/><w:numFmt w:val="'+(ord?(l%3===0?"decimal":l%3===1?"lowerLetter":"lowerRoman"):"bullet")+'"/><w:lvlText w:val="'+(ord?"%"+(l+1)+".":["•","◦","▪"][l%3])+'"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="'+(720+360*l)+'" w:hanging="360"/></w:pPr></w:lvl>').join("");
+  let numbering=XMLH+"<w:numbering "+NS+'><w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>'+lvls(false)+'</w:abstractNum><w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>'+lvls(true)+'</w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>';
+  nums.forEach((_,n)=>{numbering+='<w:num w:numId="'+(n+2)+'"><w:abstractNumId w:val="1"/><w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"/></w:lvlOverride></w:num>'});
+  numbering+="</w:numbering>";
+  const RT="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  const drels=XMLH+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdS" Type="'+RT+'/styles" Target="styles.xml"/><Relationship Id="rIdN" Type="'+RT+'/numbering" Target="numbering.xml"/>'+
+    links.map((u,j)=>'<Relationship Id="rIdL'+j+'" Type="'+RT+'/hyperlink" Target="'+xa(u)+'" TargetMode="External"/>').join("")+"</Relationships>";
+  return zipStore([
+    {name:"[Content_Types].xml",data:XMLH+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>'},
+    {name:"_rels/.rels",data:XMLH+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="'+RT+'/officeDocument" Target="word/document.xml"/></Relationships>'},
+    {name:"word/document.xml",data:doc},{name:"word/styles.xml",data:styles},{name:"word/numbering.xml",data:numbering},{name:"word/_rels/document.xml.rels",data:drels}
+  ]);
+}
+
+/* --- XLSX (dari CSV atau tabel Markdown) --- */
+function parseCsv(t){
+  t=String(t).replace(/^\ufeff/,"").replace(/\r\n?/g,"\n");
+  const first=t.split("\n").find(x=>x.trim())||"";
+  let q=false;const cnt={",":0,";":0,"\t":0};
+  for(const ch of first){if(ch==='"')q=!q;else if(!q&&ch in cnt)cnt[ch]++}
+  const d=cnt[";"]>cnt[","]&&cnt[";"]>=cnt["\t"]?";":cnt["\t"]>cnt[","]?"\t":",";
+  const rows=[];let row=[],cur="",inq=false;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(inq){if(c==='"'){if(t[i+1]==='"'){cur+='"';i++}else inq=false}else cur+=c}
+    else if(c==='"'&&cur==="")inq=true;
+    else if(c===d){row.push(cur);cur=""}
+    else if(c==="\n"){row.push(cur);rows.push(row);row=[];cur=""}
+    else cur+=c;
+  }
+  if(cur!==""||row.length){row.push(cur);rows.push(row)}
+  while(rows.length&&rows[rows.length-1].every(x=>x.trim()===""))rows.pop();
+  return rows;
+}
+function mdTableRows(t){
+  const L=t.replace(/\r\n?/g,"\n").split("\n").filter(x=>x.trim()&&!isSep(x));
+  return L.map(x=>splitRow(x).map(c=>c.replace(/\*\*|`/g,"")));
+}
+const colName=n=>{let s="";n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s};
+function makeXlsx(text){
+  const rows=/^\s*\|/.test(text)?mdTableRows(text):parseCsv(text);
+  const ncol=Math.max.apply(null,[1].concat(rows.map(r=>r.length)));
+  const widths=new Array(ncol).fill(8);
+  let sd="";
+  rows.forEach((r,i)=>{
+    let cs="";
+    r.forEach((v,j)=>{
+      v=String(v);if(v==="")return;
+      const ref=colName(j)+(i+1),hd=i===0?' s="1"':"";
+      widths[j]=Math.max(widths[j],Math.min(60,v.length+2));
+      if(/^-?(0|[1-9]\d{0,14})(\.\d+)?$/.test(v.trim()))cs+='<c r="'+ref+'"'+hd+"><v>"+v.trim()+"</v></c>";
+      else if(/^=[A-Za-z0-9_(),.:;$+\-*\/^%<>=&" !'\[\]]{1,500}$/.test(v.trim()))cs+='<c r="'+ref+'"'+hd+"><f>"+xe(v.trim().slice(1).replace(/;/g,","))+"</f></c>";
+      else cs+='<c r="'+ref+'"'+hd+' t="inlineStr"><is><t xml:space="preserve">'+xe(v)+"</t></is></c>";
+    });
+    sd+='<row r="'+(i+1)+'">'+cs+"</row>";
+  });
+  const NS='xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',RT="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  const sheet=XMLH+"<worksheet "+NS+'><sheetViews><sheetView workbookViewId="0">'+(rows.length>1?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>':"")+"</sheetView></sheetViews><sheetFormatPr defaultRowHeight=\"15\"/><cols>"+
+    widths.map((w,j)=>'<col min="'+(j+1)+'" max="'+(j+1)+'" width="'+w+'" customWidth="1"/>').join("")+"</cols><sheetData>"+sd+"</sheetData></worksheet>";
+  return zipStore([
+    {name:"[Content_Types].xml",data:XMLH+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'},
+    {name:"_rels/.rels",data:XMLH+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="'+RT+'/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+    {name:"xl/workbook.xml",data:XMLH+"<workbook "+NS+' xmlns:r="'+RT+'"><sheets><sheet name="Data" sheetId="1" r:id="rId1"/></sheets><calcPr fullCalcOnLoad="1"/></workbook>'},
+    {name:"xl/_rels/workbook.xml.rels",data:XMLH+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="'+RT+'/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="'+RT+'/styles" Target="styles.xml"/></Relationships>'},
+    {name:"xl/styles.xml",data:XMLH+"<styleSheet "+NS+'><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE7E6F7"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'},
+    {name:"xl/worksheets/sheet1.xml",data:sheet}
+  ]);
+}
+
+/* --- PDF (font standar Helvetica/Courier, huruf Latin) --- */
+const PW_R=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+const PW_B=[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+const WIN={"\u20ac":128,"\u2026":133,"\u2018":145,"\u2019":146,"\u201c":147,"\u201d":148,"\u2022":149,"\u2013":150,"\u2014":151,"\u2122":153};
+const PWIDE={"\u2022":350,"\u2013":556,"\u2014":1000,"\u2026":1000,"\u2018":222,"\u2019":222,"\u201c":333,"\u201d":333,"\u20ac":556,"\u2122":1000};
+const PAGANTI={"\u2192":"->","\u2190":"<-","\u2264":"<=","\u2265":">=","\u2260":"!=","\u2248":"~","\u2713":"v","\u2714":"v","\u2715":"x","\u00a0":" ","\u2009":" ","\u202f":" ","\u2212":"-","\u2010":"-","\u2011":"-","\u2012":"-","\u2015":"-","\u201a":",","\u201e":"\"","\u2032":"'","\u2033":"\""};
+function pdfSan(s){
+  let o="";
+  for(const ch of String(s)){
+    const c=ch.codePointAt(0);
+    if(c===10)o+="\n";
+    else if(c===9)o+="    ";
+    else if(c>=32&&c<=126)o+=ch;
+    else if(c>=160&&c<=255)o+=ch;
+    else if(WIN[ch])o+=ch;
+    else if(PAGANTI[ch])o+=PAGANTI[ch];
+    else if(c===0x200b||c===0x200d||c===0xfe0f||c<32)continue;
+    else if((c>=0x1f000&&c<=0x1faff)||(c>=0x2190&&c<=0x2bff)||(c>=0x2600&&c<=0x27bf))continue;
+    else{const b=ch.normalize("NFD")[0];o+=(b&&b.codePointAt(0)<127&&b!==ch)?b:"?"}
+  }
+  return o;
+}
+function pdfEnc(s){
+  let o="";
+  for(const ch of s){
+    let c=WIN[ch]||ch.charCodeAt(0);
+    if(c>255)c=63;
+    if(c===40||c===41||c===92)o+="\\"+String.fromCharCode(c);
+    else if(c<32||c>126)o+="\\"+("00"+c.toString(8)).slice(-3);
+    else o+=String.fromCharCode(c);
+  }
+  return o;
+}
+function pdfW(ch,f){
+  if(f==="F5")return 600;
+  const T=(f==="F2"||f==="F4")?PW_B:PW_R,c=ch.charCodeAt(0);
+  if(c>=32&&c<=126)return T[c-32];
+  if(PWIDE[ch])return PWIDE[ch];
+  if(c>=160&&c<=255){const b=ch.normalize("NFD")[0].charCodeAt(0);if(b>=32&&b<=126)return T[b-32]}
+  return 556;
+}
+const pdfTW=(t,f,sz)=>{let w=0;for(const ch of t)w+=pdfW(ch,f);return w*sz/1000};
+
+function makePdf(md){
+  const W=595.28,H=841.89,M=56,CW=W-2*M,FOOT=H-M;
+  const B=parseBlocks(md),pages=[];let pg=null,y=0;
+  const newPage=()=>{pg={c:[],a:[]};pages.push(pg);y=M};
+  const ensure=h=>{if(!pg||y+h>FOOT)newPage()};
+  const n2=v=>v.toFixed(2);
+  const fontOf=(r,bb)=>r.t==="code"?"F5":((r.b||bb)&&r.i)?"F4":(r.b||bb)?"F2":r.i?"F3":"F1";
+  function layout(runs,width,sz,bb){
+    const toks=[];
+    runs.forEach(r=>{
+      const f=fontOf(r,bb),txt=pdfSan(r.s);
+      txt.split(/(\n)/).forEach(part=>{
+        if(part==="\n"){toks.push({br:1});return}
+        part.split(/( +)/).forEach(w=>{if(w!=="")toks.push({s:w,f,sp:w[0]===" ",href:r.href,code:r.t==="code"})});
+      });
+    });
+    const lines=[];let cur=[],lw=0;
+    const brk=()=>{while(cur.length&&cur[cur.length-1].sp)cur.pop();lines.push(cur);cur=[];lw=0};
+    toks.forEach(t=>{
+      if(t.br){brk();return}
+      let w=pdfTW(t.s,t.f,sz);
+      if(t.sp){if(lw===0)return;if(lw+w>width){brk();return}cur.push(Object.assign({w},t));lw+=w;return}
+      if(lw+w>width&&lw>0)brk();
+      if(w>width){
+        let part="";
+        for(const ch of t.s){
+          const cw=pdfW(ch,t.f)*sz/1000;
+          if(lw+cw>width&&part){cur.push(Object.assign({},t,{s:part,w:pdfTW(part,t.f,sz)}));brk();part=""}
+          part+=ch;lw+=cw;
+        }
+        if(part){const pw=pdfTW(part,t.f,sz);cur.push(Object.assign({},t,{s:part,w:pw}));lw=pw}
+        return;
+      }
+      cur.push(Object.assign({w},t));lw+=w;
+    });
+    if(cur.length||!lines.length)brk();
+    return lines;
+  }
+  function drawLine(line,x0,top,sz,lead){
+    let x=x0;const base=H-(top+lead*0.78);
+    line.forEach(t=>{
+      if(!t.sp){
+        const col=t.href?"0.02 0.35 0.76 rg":"0.1 0.1 0.12 rg";
+        if(t.code)pg.c.push("0.93 0.93 0.95 rg "+n2(x)+" "+n2(base-sz*0.22)+" "+n2(t.w)+" "+n2(sz*1.1)+" re f");
+        pg.c.push(col+" BT /"+t.f+" "+n2(sz)+" Tf "+n2(x)+" "+n2(base)+" Td ("+pdfEnc(t.s)+") Tj ET");
+        if(t.href){
+          pg.c.push("0.02 0.35 0.76 RG 0.5 w "+n2(x)+" "+n2(base-1.5)+" m "+n2(x+t.w)+" "+n2(base-1.5)+" l S");
+          pg.a.push("<< /Type /Annot /Subtype /Link /Rect ["+n2(x)+" "+n2(base-3)+" "+n2(x+t.w)+" "+n2(base+sz)+"] /Border [0 0 0] /A << /S /URI /URI ("+encodeURI(t.href).replace(/[()\\]/g,c=>"\\"+c)+") >> >>");
+        }
+      }
+      x+=t.w;
+    });
+  }
+  function para(runs,x0,width,sz,lead,bb,after){
+    layout(runs,width,sz,bb).forEach(l=>{ensure(lead);drawLine(l,x0,y,sz,lead);y+=lead});
+    y+=after;
+  }
+  let k=0;
+  while(k<B.length){
+    const b=B[k++];
+    if(b.t==="h"){
+      const sz=[0,20,16,13.5,12,11.5,11][b.n],lead=sz*1.3;
+      ensure(lead*3+10);y+=b.n<=2?8:4;
+      para(b.inl,M,CW,sz,lead,true,4);
+    }else if(b.t==="p")para(b.inl,M,CW,11,15,false,6);
+    else if(b.t==="li"){
+      const x=M+14+b.level*16;
+      // nomor urut: hitung dari item berurutan pada tingkat yang sama
+      let nn=b.num;
+      if(b.ord){let j=k-2,c=0;while(j>=0&&B[j].t==="li"&&B[j].level>=b.level){if(B[j].level===b.level&&B[j].ord)c++;else if(B[j].level===b.level)break;j--}nn=(b.num===1&&c>0)?c+1:b.num}
+      ensure(15);
+      const lab=b.ord?nn+".":"\u2022";
+      pg.c.push("0.1 0.1 0.12 rg BT /F1 11 Tf "+n2(x-(b.ord?13:9))+" "+n2(H-(y+15*0.78))+" Td ("+pdfEnc(pdfSan(lab))+") Tj ET");
+      layout(b.inl,CW-(x-M),11,false).forEach((l,i)=>{if(i>0)ensure(15);drawLine(l,x,y,11,15);y+=15});
+      y+=2;
+    }else if(b.t==="code"){
+      y+=2;
+      b.text.split("\n").forEach(ln=>{
+        const txt=pdfSan(ln),per=Math.floor((CW-12)/(600*9.5/1000));
+        const chunks=txt.length?txt.match(new RegExp(".{1,"+per+"}","g")):[""];
+        chunks.forEach(c=>{
+          ensure(12.5);
+          pg.c.push("0.94 0.94 0.96 rg "+n2(M)+" "+n2(H-(y+12.5))+" "+n2(CW)+" 12.5 re f");
+          pg.c.push("0.1 0.1 0.12 rg BT /F5 9.5 Tf "+n2(M+6)+" "+n2(H-(y+9.3))+" Td ("+pdfEnc(c)+") Tj ET");
+          y+=12.5;
+        });
+      });
+      y+=8;
+    }else if(b.t==="quote"){
+      const ls=layout(b.inl.map(r=>Object.assign({},r,{i:true})),CW-18,11,false);
+      ls.forEach(l=>{ensure(15);pg.c.push("0.43 0.29 1 rg "+n2(M+2)+" "+n2(H-(y+15))+" 2.5 15 re f");drawLine(l,M+14,y,11,15);y+=15});
+      y+=6;
+    }else if(b.t==="hr"){
+      ensure(14);y+=6;pg.c.push("0.75 0.75 0.78 RG 0.8 w "+n2(M)+" "+n2(H-y)+" m "+n2(M+CW)+" "+n2(H-y)+" l S");y+=8;
+    }else if(b.t==="table"){
+      const n=b.head.length,sz=9.5,lead=12.5,pad=4,all=[b.head].concat(b.rows);
+      const nat=b.head.map((_,j)=>Math.max.apply(null,all.map(r=>pdfTW(pdfSan(r[j].map(x=>x.s).join("")),"F1",sz)))+2*pad+2);
+      let cw=nat.map(x=>Math.max(36,Math.min(x,CW)));const sum=cw.reduce((a,x)=>a+x,0);cw=cw.map(x=>x/sum*CW);
+      all.forEach((r,ri)=>{
+        const cells=r.map((c,j)=>layout(c,cw[j]-2*pad,sz,ri===0)),h=Math.max.apply(null,cells.map(c=>c.length))*lead+2*pad;
+        ensure(h);let x=M;
+        cells.forEach((ls,j)=>{
+          pg.c.push((ri===0?"0.91 0.90 0.97 rg ":"1 1 1 rg ")+"0.75 0.75 0.78 RG 0.5 w "+n2(x)+" "+n2(H-(y+h))+" "+n2(cw[j])+" "+n2(h)+" re B");
+          ls.forEach((l,i)=>{
+            let off=0;const lwid=l.reduce((a,t)=>a+t.w,0);
+            if(b.align[j]==="right")off=cw[j]-2*pad-lwid;else if(b.align[j]==="center")off=(cw[j]-2*pad-lwid)/2;
+            drawLine(l,x+pad+off,y+pad+i*lead,sz,lead);
+          });
+          x+=cw[j];
+        });
+        y+=h;
+      });
+      y+=10;
+    }
+  }
+  if(!pages.length)newPage();
+  // objek PDF
+  const objs=[];const add=s=>{objs.push(s);return objs.length};
+  add("<< /Type /Catalog /Pages 2 0 R >>");add("PAGES");
+  ["Helvetica","Helvetica-Bold","Helvetica-Oblique","Helvetica-BoldOblique","Courier"].forEach(f=>add("<< /Type /Font /Subtype /Type1 /BaseFont /"+f+" /Encoding /WinAnsiEncoding >>"));
+  const kids=[];
+  pages.forEach((p,i)=>{
+    const lab="Halaman "+(i+1)+" dari "+pages.length;
+    p.c.push("0.5 0.5 0.55 rg BT /F1 8.5 Tf "+n2(W/2-pdfTW(lab,"F1",8.5)/2)+" 28 Td ("+lab+") Tj ET");
+    const stream=p.c.join("\n"),ci=add("<< /Length "+stream.length+" >>\nstream\n"+stream+"\nendstream");
+    kids.push(add("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+W+" "+H+"] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R /F5 7 0 R >> >> /Contents "+ci+" 0 R"+(p.a.length?" /Annots ["+p.a.join(" ")+"]":"")+" >>"));
+  });
+  objs[1]="<< /Type /Pages /Kids ["+kids.map(x=>x+" 0 R").join(" ")+"] /Count "+kids.length+" >>";
+  let out="%PDF-1.4\n";const offs=[];
+  objs.forEach((o,i)=>{offs.push(out.length);out+=(i+1)+" 0 obj\n"+o+"\nendobj\n"});
+  const xr=out.length;
+  out+="xref\n0 "+(objs.length+1)+"\n0000000000 65535 f \n"+offs.map(o=>("0000000000"+o).slice(-10)+" 00000 n \n").join("")+"trailer\n<< /Size "+(objs.length+1)+" /Root 1 0 R >>\nstartxref\n"+xr+"\n%%EOF";
+  const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;
+  return u;
+}
+
+/* --- Blok [[FILE: ...]] dari Zeta --- */
+const MIME={html:"text/html",htm:"text/html",css:"text/css",js:"text/javascript",json:"application/json",csv:"text/csv",md:"text/markdown",svg:"image/svg+xml",xml:"application/xml",pdf:"application/pdf",docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",xlsx:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"};
+const extOf=n=>{const m=/\.([A-Za-z0-9]+)$/.exec(n);return m?m[1].toLowerCase():""};
+function safeName(n){
+  n=String(n||"").trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g,"_").replace(/^\.+(?=\.)/,"").slice(0,100)||"file";
+  if(!extOf(n))n+=".txt";
+  return n.replace(/\.xls$/i,".xlsx").replace(/\.doc$/i,".docx");
+}
+function cleanFile(c){
+  c=String(c).replace(/^\n+/,"").replace(/\s+$/,"");
+  const m=/^```[^\n]*\n([\s\S]*?)\n```$/.exec(c);
+  return(m&&!m[1].includes("\n```")&&!m[1].startsWith("```"))?m[1]:c;
+}
+function splitFiles(raw,streaming){
+  const segs=[];let pos=0,m;
+  const re=/\[\[FILE:\s*([^\]\n]+?)\s*\]\]\n?([\s\S]*?)(?:\n?\[\[\/FILE\]\]|$)/g;
+  while((m=re.exec(raw))!==null){
+    if(m.index>pos)segs.push({type:"text",text:raw.slice(pos,m.index)});
+    const done=m[0].endsWith("[[/FILE]]");
+    segs.push({type:"file",name:safeName(m[1]),content:cleanFile(m[2]),done});
+    pos=m.index+m[0].length;
+    if(m[0].length===0)re.lastIndex++;
+  }
+  let rest=raw.slice(pos);
+  const h=/\[\[FILE:[^\]\n]*$/.exec(rest);
+  if(h){
+    if(h.index>0)segs.push({type:"text",text:rest.slice(0,h.index)});
+    segs.push({type:"file",name:"",content:"",done:false});rest="";
+  }else if(streaming)rest=rest.replace(/\[\[(?:F(?:I(?:L(?:E)?)?)?)?$/,"").replace(/\[$/,"");
+  if(rest)segs.push({type:"text",text:rest});
+  return segs;
+}
+function fileBlob(name,content){
+  const e=extOf(name);
+  if(e==="pdf")return new Blob([makePdf(content)],{type:MIME.pdf});
+  if(e==="docx")return new Blob([makeDocx(content)],{type:MIME.docx});
+  if(e==="xlsx")return new Blob([makeXlsx(content)],{type:MIME.xlsx});
+  return new Blob([(e==="csv"?"\ufeff":"")+content],{type:(MIME[e]||"text/plain")+";charset=utf-8"});
+}
+
+/* Menghapus tanda bintang (tebal, miring, bullet) dan mengganti emoji robot dari teks chat.
+   Blok kode, kode inline, dan isi file tidak disentuh. */
+function tanpaBintang(teks){
+  const bagian=String(teks).split(/(```[\s\S]*?```|```[\s\S]*$|`[^`\n]*`|\[\[FILE:[\s\S]*?\[\[\/FILE\]\]|\[\[FILE:[\s\S]*$)/);
+  return bagian.map((b,i)=>{
+    if(i%2===1)return b;
+    return b
+      .replace(/^([ \t]*)\*[ \t]+/gm,"$1- ")
+      .replace(/\*\*([^\n]*?)\*\*/g,(_,x)=>x.trim())
+      .replace(/(^|[^\w*])\*([^\s*][^*\n]*?)\*(?![\w*])/gm,"$1$2")
+      .replace(/\*\*/g,"")
+      .replace(/🤖/g,"😊");
+  }).join("");
+}
+/* ===== AKHIR PEMBUAT FILE ===== */
+
+/* ===== APLIKASI ===== */
+const $=id=>document.getElementById(id);
+const log=$("log"),inp=$("in"),btn=$("send");
+const LS="zeta_chats_v1",TH="zeta_theme";
+const LOGO=document.querySelector("header img.logo").src;
+let chats=lsGet(LS,[]),cur=null,pend=[],busy=false,editMode=false,ctl=null;
+
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function lsSet(k,v,rep){try{localStorage.setItem(k,JSON.stringify(v,rep));return true}catch(e){toast("Penyimpanan penuh, riwayat tidak tersimpan");return false}}
+// gambar lampiran hanya disimpan di memori (tidak di localStorage supaya tidak penuh)
+const tanpaGambar=(k,v)=>k==="imgs"?undefined:v;
+function save(){lsSet(LS,chats,tanpaGambar)}
+let tt;function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),2600)}
+const getCur=()=>chats.find(c=>c.id===cur);
+const mobile=()=>innerWidth<800;
+const nearBottom=()=>log.scrollHeight-log.scrollTop-log.clientHeight<90;
+
+/* tema */
+function applyTheme(){
+  const t=lsGet(TH,"auto");
+  const dark=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme=dark?"dark":"light";
+  document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+}
+document.querySelectorAll("#seg button").forEach(b=>b.onclick=()=>{lsSet(TH,b.dataset.t);applyTheme()});
+
+/* pesan pengguna */
+function add(role,text,att){
+  const d=document.createElement("div");d.className="m "+role;
+  if(att&&att.length){
+    const c=document.createElement("div");c.className="chips";
+    att.forEach(a=>{const s=document.createElement("div");s.className="chip";
+      if(a.thumb){const i=document.createElement("img");i.src=a.thumb;s.appendChild(i)}
+      const n=document.createElement("span");n.textContent=a.name;s.appendChild(n);c.appendChild(s)});
+    d.appendChild(c);
+  }
+  const t=document.createElement("span");t.textContent=text;d.appendChild(t);
+  log.appendChild(d);log.scrollTop=log.scrollHeight;return t;
+}
+
+/* jawaban Zeta: logo + gelembung + tombol aksi */
+const SVG_CP='<svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg>';
+const SVG_RG='<svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0115.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 01-15.5 6.2L3 16M3 21v-5h5"/></svg>';
+function mkBot(live){
+  const row=document.createElement("div");row.className="br"+(live?" live":"");
+  const av=document.createElement("img");av.className="av";av.alt="Zeta";av.src=LOGO;
+  const bw=document.createElement("div");bw.className="bw";
+  const bubble=document.createElement("div");bubble.className="m b";
+  const md=document.createElement("div");md.className="md";
+  const st=document.createElement("div");st.className="st";
+  const nt=document.createElement("div");nt.className="nt";nt.hidden=true;
+  bubble.append(md,st,nt);
+  const acts=document.createElement("div");acts.className="acts";
+  acts.innerHTML='<button class="sm cpb" type="button" title="Salin jawaban" aria-label="Salin jawaban">'+SVG_CP+'</button><button class="sm rg" type="button" title="Ulangi jawaban" aria-label="Ulangi jawaban">'+SVG_RG+'</button>';
+  bw.append(bubble,acts);row.append(av,bw);log.appendChild(row);
+  const ui={row,bubble,md,st,nt,raw:"",files:[]};bubble.__ui=ui;return ui;
+}
+const TIPE={pdf:"Dokumen PDF",docx:"Dokumen Word",xlsx:"Lembar Excel",csv:"Data CSV",html:"Halaman web",htm:"Halaman web",md:"Dokumen Markdown",txt:"Teks",json:"Data JSON",js:"Kode JavaScript",py:"Kode Python",css:"Gaya CSS",svg:"Gambar SVG"};
+function ukuran(n){return n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(1)+" MB"}
+function cardHtml(f,i){
+  const e=extOf(f.name);
+  if(!f.done){
+    return '<div class="fc"><div class="fi">'+esc((e||"…").slice(0,4).toUpperCase())+'</div><div class="fm"><b>'+esc(f.name||"File")+'</b><span>Menulis file…</span></div><button class="fb" disabled>Unduh</button></div>';
+  }
+  const teks=!/^(pdf|docx|xlsx)$/.test(e);
+  const info=(TIPE[e]||(e?e.toUpperCase()+" file":"File"))+(teks?" · "+ukuran(new Blob([f.content]).size):"");
+  return '<div class="fc" data-i="'+i+'"><div class="fi">'+esc((e||"txt").slice(0,4).toUpperCase())+'</div><div class="fm"><b title="'+esc(f.name)+'">'+esc(f.name)+'</b><span>'+esc(info)+'</span></div>'+
+    (teks?'<button class="fb gh" data-act="cp" type="button">Salin</button>':"")+'<button class="fb" data-act="dl" type="button">Unduh</button></div>';
+}
+function paint(ui,streaming){
+  const clean=tanpaBintang(ui.raw),segs=splitFiles(clean,streaming);
+  let h="";const files=[];
+  segs.forEach(s=>{
+    if(s.type==="text")h+=mdHtml(parseBlocks(s.text));
+    else{files.push(s);h+=cardHtml(s,files.length-1)}
+  });
+  const stick=nearBottom();
+  ui.md.innerHTML=h;ui.files=files;
+  if(stick)log.scrollTop=log.scrollHeight;
+}
+function textForCopy(raw){
+  const segs=splitFiles(tanpaBintang(raw),false);
+  const t=segs.filter(s=>s.type==="text").map(s=>s.text).join("").trim();
+  return t||segs.filter(s=>s.type==="file").map(s=>s.content).join("\n\n");
+}
+function renderLog(){
+  log.innerHTML="";
+  const c=getCur();
+  if(!c||!c.msgs.length){const h=document.createElement("div");h.className="hint";h.id="hint";h.textContent="Halo, aku Zeta. Tanya apa saja atau minta bantuan mengerjakan tugas.";log.appendChild(h);return}
+  c.msgs.forEach(m=>{
+    if(m.role==="user")add("u",m.content,m.att);
+    else{const ui=mkBot(false);ui.raw=m.content;paint(ui,false)}
+  });
+  log.scrollTop=log.scrollHeight;
+}
+
+/* salin, ulangi, unduh (delegasi klik) */
+async function salin(t){
+  try{await navigator.clipboard.writeText(t)}
+  catch(e){const a=document.createElement("textarea");a.value=t;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();try{document.execCommand("copy")}catch(_){}a.remove()}
+  toast("Tersalin");
+}
+log.addEventListener("click",e=>{
+  const bt=e.target.closest("button");if(!bt)return;
+  const bubble=bt.closest(".bw");
+  if(bt.classList.contains("cpb")){const ui=bubble.querySelector(".m.b").__ui;salin(textForCopy(ui.raw));return}
+  if(bt.classList.contains("rg")){regen();return}
+  if(bt.classList.contains("cp")){const code=bt.closest(".cb").querySelector("code");salin(code.textContent);return}
+  const fc=bt.closest(".fc");
+  if(fc&&bt.dataset.act){
+    const ui=bt.closest(".m.b").__ui,f=ui.files[+fc.dataset.i];if(!f)return;
+    if(bt.dataset.act==="cp"){salin(f.content);return}
+    try{
+      const url=URL.createObjectURL(fileBlob(f.name,f.content)),a=document.createElement("a");
+      a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),4000);
+    }catch(err){toast("Gagal membuat file: "+err.message)}
+  }
+});
+
+/* riwayat */
+function grp(t){
+  const d0=new Date();d0.setHours(0,0,0,0);
+  const days=Math.floor((d0-new Date(t).setHours(0,0,0,0))/864e5);
+  return days<=0?"Hari ini":days===1?"Kemarin":days<=7?"7 hari terakhir":"Lebih lama";
+}
+function renderList(){
+  const q=$("q").value.trim().toLowerCase(),box=$("list");box.innerHTML="";
+  const items=chats.filter(c=>!q||c.title.toLowerCase().includes(q)||c.msgs.some(m=>m.content.toLowerCase().includes(q))).sort((a,b)=>b.t-a.t);
+  if(!items.length){box.innerHTML='<div class="empty">'+(q?"Tidak ada hasil":"Belum ada riwayat")+"</div>";return}
+  let last="";
+  items.forEach(c=>{
+    const g=grp(c.t);
+    if(g!==last){const l=document.createElement("div");l.className="gl";l.textContent=g;box.appendChild(l);last=g}
+    const it=document.createElement("div");it.className="it"+(c.id===cur?" on":"");
+    it.innerHTML='<div class="tt"></div><div class="act"><button class="sm" data-r title="Ubah nama"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button><button class="sm" data-d title="Hapus"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>';
+    it.querySelector(".tt").textContent=c.title||"Chat baru";
+    it.onclick=e=>{
+      if(busy)return toast("Tunggu balasan selesai dulu");
+      if(e.target.closest("[data-r]")){const n=prompt("Nama chat:",c.title);if(n&&n.trim()){c.title=n.trim().slice(0,60);save();renderList()}return}
+      if(e.target.closest("[data-d]")){if(confirm("Hapus chat ini?")){chats=chats.filter(x=>x!==c);if(cur===c.id){cur=null;renderLog()}save();renderList()}return}
+      cur=c.id;renderLog();renderList();if(mobile())setSide(false);
+    };
+    box.appendChild(it);
+  });
+}
+function newChat(){
+  if(busy)return toast("Tunggu balasan selesai dulu");
+  cur=null;pend=[];renderPend();renderLog();renderList();if(mobile())setSide(false);inp.focus();
+}
+function setSide(o){document.body.classList.toggle("side-open",o)}
+$("menu").onclick=()=>setSide(!document.body.classList.contains("side-open"));
+$("back").onclick=()=>setSide(false);
+$("newb").onclick=newChat;$("hnew").onclick=newChat;
+$("q").oninput=renderList;
+
+/* lampiran */
+const isText=f=>f.type.startsWith("text/")||/\.(txt|md|csv|json|js|ts|py|html|css|xml|yml|yaml|log|sql|java|c|cpp|php)$/i.test(f.name);
+function loadImg(file){return new Promise((res,rej)=>{
+  const u=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{URL.revokeObjectURL(u);res(im)};
+  im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("Gambar tidak bisa dibaca"))};im.src=u})}
+function drawImg(im,max,q){
+  const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");
+  c.width=Math.max(1,Math.round(im.width*s));c.height=Math.max(1,Math.round(im.height*s));
+  const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg",q);
+}
+// Perkecil bertahap sampai ukurannya aman (batas permintaan Vercel sekitar 4,5 MB untuk semua foto + teks)
+const MAKS_FOTO=450000,MAKS_JUMLAH_FOTO=4;
+async function shrinkAman(file){
+  const im=await loadImg(file);let dim=1280,q=.85,d="";
+  for(let k=0;k<8;k++){d=drawImg(im,dim,q);if(d.length<=MAKS_FOTO)return{data:d,thumb:drawImg(im,120,.7)};dim=Math.round(dim*.8);q=Math.max(.5,q-.06)}
+  throw new Error("Foto "+file.name+" terlalu besar untuk dikirim");
+}
+async function addFiles(files){
+  for(const f of files){
+    try{
+      if(f.type.startsWith("image/")){
+        if(pend.filter(p=>p.kind==="image").length>=MAKS_JUMLAH_FOTO){toast("Maksimal "+MAKS_JUMLAH_FOTO+" foto per pesan");continue}
+        const r=await shrinkAman(f);pend.push({kind:"image",name:f.name,data:r.data,thumb:r.thumb});
+      }else if(isText(f)){
+        if(f.size>100*1024){toast(f.name+" terlalu besar (maks 100 KB)");continue}
+        pend.push({kind:"text",name:f.name,text:await f.text()});
+      }else toast("Format "+f.name+" belum didukung");
+    }catch(e){toast(e.message)}
+  }
+  renderPend();
+  if(editMode&&pend.some(p=>p.kind==="image")&&!inp.value){inp.value="Tolong edit foto ini: ";autosize()}
+  editMode=false;inp.focus();
+}
+function renderPend(){
+  const b=$("pend");b.innerHTML="";
+  pend.forEach((p,i)=>{
+    const s=document.createElement("div");s.className="chip";
+    if(p.thumb){const im=document.createElement("img");im.src=p.thumb;s.appendChild(im)}
+    const n=document.createElement("span");n.textContent=p.name;s.appendChild(n);
+    const x=document.createElement("button");x.className="sm";x.setAttribute("aria-label","Hapus lampiran");
+    x.innerHTML='<svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    x.onclick=()=>{pend.splice(i,1);renderPend()};s.appendChild(x);b.appendChild(s);
+  });
+}
+const pm=$("pm");
+$("plus").onclick=e=>{e.stopPropagation();pm.classList.toggle("open")};
+document.addEventListener("click",e=>{if(!pm.contains(e.target))pm.classList.remove("open")});
+pm.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{
+  pm.classList.remove("open");const a=b.dataset.a;editMode=a==="edit";
+  ({file:"fFile",photo:"fImg",edit:"fImg",cam:"fCam"}[a]&&$({file:"fFile",photo:"fImg",edit:"fImg",cam:"fCam"}[a]).click());
+});
+["fFile","fImg","fCam"].forEach(id=>$(id).onchange=e=>{const fs=[...e.target.files];e.target.value="";addFiles(fs)});
+
+/* kolom ketik: tinggi otomatis tanpa scrollbar kecil */
+function autosize(){
+  inp.style.height="auto";
+  const h=inp.scrollHeight+2; // +2 = garis tepi (border-box), tanpa ini muncul scrollbar
+  inp.style.height=Math.min(h,160)+"px";
+  inp.style.overflowY=h>160?"auto":"hidden";
+}
+inp.addEventListener("input",autosize);
+
+/* kirim / berhenti */
+function setBusy(b){busy=b;btn.textContent=b?"Berhenti":"Kirim"}
+function buildMessages(c){
+  const msgs=c.msgs.map(m=>({role:m.role,content:m.api||m.content}));
+  // gambar dari 2 pesan terakhir yang punya gambar ikut dikirim lagi (supaya pertanyaan lanjutan masih "melihat" gambarnya)
+  let n=0;
+  for(let i=c.msgs.length-1;i>=0&&n<2;i--){
+    const im=c.msgs[i].imgs;
+    if(im&&im.length){msgs[i].images=im.map(a=>({type:a.type,data:a.data}));n++}
+  }
+  let body={messages:msgs};
+  while(JSON.stringify(body).length>4000000){
+    const j=msgs.findIndex(m=>m.images);
+    if(j<0)throw new Error("Percakapan terlalu besar untuk dikirim. Mulai chat baru atau kurangi lampiran.");
+    delete msgs[j].images;
+  }
+  return body;
+}
+async function send(){
+  const text=inp.value.trim();if((!text&&!pend.length)||busy)return;
+  let c=getCur();
+  if(!c){c={id:Date.now().toString(36),title:"",msgs:[],t:Date.now()};chats.unshift(c);cur=c.id}
+  const h=$("hint");if(h)h.remove();
+  let api=text;const imgs=[],att=[];
+  pend.forEach(f=>{
+    if(f.kind==="text")api+="\n\n[File: "+f.name+"]\n"+f.text;
+    else imgs.push({name:f.name,type:"image/jpeg",data:f.data.split(",")[1]});
+    att.push({name:f.name,kind:f.kind,thumb:f.thumb});
+  });
+  if(!api.trim())api="Tolong lihat lampiran ini.";
+  const shown=text||"(lampiran)";
+  c.msgs.push({role:"user",content:shown,api,att,imgs:imgs.length?imgs:undefined});
+  if(!c.title)c.title=(text||att[0].name).slice(0,40);
+  c.t=Date.now();
+  pend=[];renderPend();inp.value="";autosize();
+  add("u",shown,att);
+  await run(c);
+}
+async function regen(){
+  const c=getCur();if(busy||!c)return;
+  const last=c.msgs[c.msgs.length-1];
+  if(last&&last.role==="assistant"){c.msgs.pop();const rows=log.querySelectorAll(".br");if(rows.length)rows[rows.length-1].remove()}
+  if(!c.msgs.length||c.msgs[c.msgs.length-1].role!=="user")return;
+  save();await run(c);
+}
+async function run(c){
+  setBusy(true);renderList();
+  const ui=mkBot(true);ui.st.textContent="…";
+  log.scrollTop=log.scrollHeight;
+  ctl=new AbortController();
+  let aborted=false,err="",terpotong=false,selesai=false,frame=0;
+  const lukis=()=>{frame=0;paint(ui,true)};
+  const jadwal=()=>{if(!frame)frame=requestAnimationFrame(lukis)};
+  try{
+    const body=buildMessages(c);
+    const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:ctl.signal});
+    const ct=r.headers.get("content-type")||"";
+    if(!r.ok||!/ndjson/.test(ct)){
+      let d={};const tx=await r.text();try{d=JSON.parse(tx)}catch(e){}
+      if(!r.ok)throw new Error(r.status===413?"Lampiran atau percakapan terlalu besar. Kurangi foto atau mulai chat baru.":(d.error||"Gagal ("+r.status+")"));
+      ui.raw=d.text||"";selesai=true; // kompatibel dengan backend lama
+    }else{
+      const rd=r.body.getReader(),dec=new TextDecoder();let buf="";
+      const onEvt=ev=>{
+        if(ev.type==="delta"){ui.raw+=ev.text;ui.st.textContent="";jadwal()}
+        else if(ev.type==="status"){ui.st.textContent=ev.text}
+        else if(ev.type==="done"){selesai=true;terpotong=!!ev.terpotong}
+        else if(ev.type==="error"){err=ev.message||"Gagal"}
+      };
+      for(;;){
+        const {value,done}=await rd.read();if(done)break;
+        buf+=dec.decode(value,{stream:true});
+        let k;while((k=buf.indexOf("\n"))>=0){const l=buf.slice(0,k).trim();buf=buf.slice(k+1);if(l){try{onEvt(JSON.parse(l))}catch(e){}}}
+      }
+      buf+=dec.decode();if(buf.trim()){try{onEvt(JSON.parse(buf.trim()))}catch(e){}}
+    }
+  }catch(e){
+    if(e.name==="AbortError")aborted=true;else err=e.message||"Gagal";
+  }
+  if(frame){cancelAnimationFrame(frame);frame=0}
+  ui.st.textContent="";ui.row.classList.remove("live");
+  const teksFinal=tanpaBintang(ui.raw);
+  if(teksFinal.trim()){
+    paint(ui,false);
+    c.msgs.push({role:"assistant",content:teksFinal});
+    let cat="";
+    if(aborted)cat="Jawaban dihentikan.";
+    else if(err)cat="Koneksi terputus sebelum jawaban selesai ("+err+").";
+    else if(terpotong||!selesai)cat="Jawaban terpotong. Ketik “lanjutkan” supaya Zeta meneruskannya.";
+    if(cat){ui.nt.textContent=cat;ui.nt.hidden=false}
+  }else{
+    // tidak ada jawaban sama sekali
+    if(aborted){ui.row.remove();inp.value=c.msgs[c.msgs.length-1].content==="(lampiran)"?"":c.msgs[c.msgs.length-1].content;autosize()}
+    else{ui.md.textContent="Maaf, ada gangguan: "+(err||"tidak ada jawaban");}
+    c.msgs.pop();
+    if(!c.msgs.length){chats=chats.filter(x=>x!==c);cur=null}
+  }
+  ctl=null;save();renderList();setBusy(false);inp.focus();
+}
+btn.onclick=()=>{if(busy){if(ctl)ctl.abort()}else send()};
+inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(!busy)send()}});
+
+/* dialog */
+$("bset").onclick=()=>{$("dSet").showModal();if(mobile())setSide(false)};
+$("bhelp").onclick=()=>{$("dHelp").showModal();if(mobile())setSide(false)};
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
+$("bexp").onclick=()=>{
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(chats,tanpaGambar,2)],{type:"application/json"}));
+  a.download="riwayat-zeta.json";a.click();URL.revokeObjectURL(a.href);
+};
+$("bclr").onclick=()=>{
+  if(busy)return toast("Tunggu balasan selesai dulu");
+  if(confirm("Hapus semua riwayat? Ini tidak bisa dibatalkan.")){chats=[];cur=null;save();renderLog();renderList();$("dSet").close()}
+};
+
+if(mobile())setSide(false);
+applyTheme();renderList();
 </script>
 </body>
 </html>
