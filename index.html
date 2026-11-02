@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zeta</title>
 <style>
-:root{--bg:#fafaf7;--card:#fff;--bd:#e5e7eb;--tx:#1f2328;--mut:#6b7280;--pri:#6d4aff;--bot:#f0eefc;--hov:#f3f2fb;--wm:#1a12b5}
-:root[data-theme=dark]{--bg:#14141a;--card:#1c1c24;--bd:#2c2c38;--tx:#e8e8ee;--mut:#9a9aaa;--bot:#26233d;--hov:#262633;--wm:#9b93ff}
+:root{--bg:#fafaf7;--card:#fff;--bd:#e5e7eb;--tx:#1f2328;--mut:#6b7280;--pri:#6d4aff;--bot:#f0eefc;--hov:#f3f2fb;--wm:#1a12b5;--cbg:#f6f5fb}
+:root[data-theme=dark]{--bg:#14141a;--card:#1c1c24;--bd:#2c2c38;--tx:#e8e8ee;--mut:#9a9aaa;--bot:#26233d;--hov:#262633;--wm:#9b93ff;--cbg:#0e0e13}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:row;overflow:hidden}
@@ -68,6 +68,58 @@ textarea{flex:1;resize:none;border:1px solid var(--bd);border-radius:14px;paddin
 #plus:hover{background:var(--hov)}
 #pm{display:none;position:absolute;left:0;bottom:52px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:6px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:5}
 #pm.open{display:block}
+
+/* balasan AI */
+.r{display:flex;gap:10px;align-items:flex-start;width:100%}
+.av{width:28px;height:28px;border-radius:8px;object-fit:contain;flex:none;margin-top:2px}
+.bd{flex:1;min-width:0}
+.md{line-height:1.7;overflow-wrap:anywhere}
+.md>:first-child{margin-top:0}.md>:last-child{margin-bottom:0}
+.md p{margin:0 0 .8em}
+.md h2,.md h3,.md h4,.md h5{margin:1.1em 0 .4em;line-height:1.3}
+.md h2{font-size:1.3em}.md h3{font-size:1.15em}.md h4,.md h5{font-size:1.02em}
+.md ul,.md ol{margin:0 0 .8em;padding-left:1.4em}.md li{margin:.2em 0}.md li>ul,.md li>ol{margin:.2em 0}
+.md a{color:var(--pri);text-decoration:underline;text-underline-offset:2px}
+.md :not(pre)>code{background:var(--hov);border:1px solid var(--bd);border-radius:6px;padding:.1em .35em;font:.9em ui-monospace,Menlo,Consolas,monospace}
+.md blockquote{margin:0 0 .8em;padding:.2em 0 .2em 12px;border-left:3px solid var(--pri);color:var(--mut)}
+.md hr{border:0;border-top:1px solid var(--bd);margin:1em 0}
+.tw{overflow-x:auto;margin:0 0 .8em}
+.md table{border-collapse:collapse;font-size:.95em;min-width:60%}
+.md th,.md td{border:1px solid var(--bd);padding:6px 10px;text-align:left;vertical-align:top}
+.md th{background:var(--hov)}
+.cb{border:1px solid var(--bd);border-radius:12px;overflow:hidden;margin:0 0 .8em}
+.ch{display:flex;justify-content:space-between;align-items:center;padding:4px 6px 4px 12px;background:var(--hov);font-size:12px;color:var(--mut)}
+.cp{border:0;background:none;color:var(--mut);cursor:pointer;padding:3px 8px;border-radius:8px;font-size:12px}
+.cp:hover{background:var(--bd);color:var(--tx)}
+.cb pre{margin:0;padding:12px;overflow-x:auto;background:var(--cbg);color:var(--tx);font:13px/1.55 ui-monospace,Menlo,Consolas,monospace;white-space:pre}
+.wait{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:14px;padding:6px 0}
+.dots{display:inline-flex;gap:4px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--pri);opacity:.35;animation:bn 1.2s infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes bn{0%,80%,100%{opacity:.25;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.dots i{animation:none;opacity:.7}}
+.errt{color:#d92d20}
+.acts{display:flex;flex-wrap:wrap;gap:2px;margin-top:6px}
+.ab{display:flex;align-items:center;gap:6px;border:0;background:none;color:var(--mut);cursor:pointer;padding:5px 8px;border-radius:8px;font-size:13px}
+.ab:hover{background:var(--hov);color:var(--tx)}
+.fc{border:1px solid var(--bd);background:var(--card);border-radius:14px;margin:4px 0 .8em;max-width:520px;overflow:hidden}
+.fh{display:flex;align-items:center;gap:10px;padding:10px 12px;flex-wrap:wrap}
+.fi{width:38px;height:38px;border-radius:10px;background:var(--hov);color:var(--pri);display:grid;place-items:center;flex:none}
+.fm{flex:1;min-width:120px}.fn{font-weight:600;font-size:14px;overflow-wrap:anywhere}.fs{font-size:12px;color:var(--mut)}
+.fbt{display:flex;gap:6px}
+.fb{border:1px solid var(--bd);background:var(--bg);border-radius:10px;padding:6px 12px;cursor:pointer;font-size:13px}
+.fb.pri{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:600}
+.fb:disabled{opacity:.5;cursor:default}
+.fp{margin:0;padding:12px;border-top:1px solid var(--bd);background:var(--cbg);color:var(--tx);font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:280px;overflow:auto}
+.fp[hidden]{display:none}
+#send.stop{background:#d92d20}
+.pdfdoc{background:#fff;color:#111;width:700px;font:14px/1.6 Arial,Helvetica,sans-serif}
+.pdfdoc table{border-collapse:collapse}
+.pdfdoc th,.pdfdoc td{border:1px solid #ccc;padding:6px 8px;color:#111;background:#fff}
+.pdfdoc th{background:#eee}
+.pdfdoc .cb{border:1px solid #ccc}.pdfdoc .ch{display:none}
+.pdfdoc pre{background:#f3f3f3;color:#111;white-space:pre-wrap;padding:10px}
+.pdfdoc a{color:#1a12b5}
 
 /* dialog + toast */
 dialog{border:1px solid var(--bd);border-radius:16px;background:var(--card);color:var(--tx);padding:18px;max-width:420px;width:calc(100% - 32px)}
@@ -175,8 +227,266 @@ function applyTheme(){
 document.querySelectorAll("#seg button").forEach(b=>b.onclick=()=>{lsSet(TH,b.dataset.t);applyTheme()});
 
 /* pesan */
-function add(role,text,att){
-  const d=document.createElement("div");d.className="m "+role;
+const LOGO=(document.querySelector("header img.logo")||{}).src||"";
+const ICON={
+  file:'<svg class="ic" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8zM14 3v5h5"/></svg>',
+  copy:'<svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg>',
+  redo:'<svg class="ic" viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/></svg>',
+  next:'<svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+};
+
+/*PURE-START*/
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+// Markdown aman: semua teks di-escape dulu; tautan hanya http(s).
+function inline(s){
+  const codes=[];
+  s=String(s).replace(/`([^`\n]+)`/g,(_,c)=>{codes.push(c);return "\u0000"+(codes.length-1)+"\u0000"});
+  s=esc(s);
+  s=s.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  s=s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+[^\s<).,;:!?])/g,'$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+  s=s.replace(/\*\*([^\n]+?)\*\*/g,"<strong>$1</strong>");
+  s=s.replace(/(^|[^\w*])\*([^\s*][^*\n]*?)\*(?![\w*])/g,"$1<em>$2</em>");
+  s=s.replace(/~~([^\n]+?)~~/g,"<del>$1</del>");
+  return s.replace(/\u0000(\d+)\u0000/g,(_,n)=>"<code>"+esc(codes[n])+"</code>");
+}
+
+function parseBlocks(src){
+  const L=String(src).replace(/\r/g,"").split("\n"),B=[];let i=0;
+  const fence=/^\s*```\s*([\w+#.-]*)\s*$/,head=/^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/,hr=/^\s*([-*_])(\s*\1){2,}\s*$/;
+  const li=/^(\s*)([-*+]|\d+[.)])\s+(.*)$/,row=/^\s*\|.*\|\s*$/,sep=/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/,qt=/^\s{0,3}>\s?(.*)$/;
+  const starts=l=>fence.test(l)||head.test(l)||hr.test(l)||li.test(l)||row.test(l)||qt.test(l);
+  const cells=l=>l.trim().replace(/^\|/,"").replace(/\|$/,"").split("|").map(c=>c.trim());
+  while(i<L.length){
+    const l=L[i];let m;
+    if(!l.trim()){i++;continue}
+    if((m=fence.exec(l))){const buf=[];i++;while(i<L.length&&!/^\s*```\s*$/.test(L[i]))buf.push(L[i++]);i++;B.push({t:"code",lang:m[1],text:buf.join("\n")});continue}
+    if((m=head.exec(l))){B.push({t:"h",n:m[1].length,text:m[2]});i++;continue}
+    if(hr.test(l)){B.push({t:"hr"});i++;continue}
+    if(row.test(l)&&i+1<L.length&&sep.test(L[i+1])){
+      const hd=cells(l);i+=2;const rows=[];
+      while(i<L.length&&row.test(L[i])){rows.push(cells(L[i]));i++}
+      B.push({t:"table",head:hd,rows});continue}
+    if(qt.test(l)){const buf=[];while(i<L.length&&(m=qt.exec(L[i]))){buf.push(m[1]);i++}B.push({t:"quote",text:buf.join("\n")});continue}
+    if(li.test(l)){const items=[];
+      while(i<L.length&&(m=li.exec(L[i]))&&!hr.test(L[i])){items.push({lvl:Math.ceil(m[1].replace(/\t/g,"    ").length/4),ord:/\d/.test(m[2]),n:parseInt(m[2],10)||0,text:m[3]});i++}
+      B.push({t:"list",items});continue}
+    const buf=[l];i++;
+    while(i<L.length&&L[i].trim()&&!starts(L[i]))buf.push(L[i++]);
+    B.push({t:"p",text:buf.join("\n")});
+  }
+  return B;
+}
+
+function listHtml(items){
+  let h="";const st=[];
+  items.forEach(it=>{
+    while(st.length&&st[st.length-1].lvl>it.lvl)h+="</li></"+st.pop().tag+">";
+    const tag=it.ord?"ol":"ul";
+    if(!st.length||st[st.length-1].lvl<it.lvl){h+="<"+tag+(it.ord&&it.n>1?' start="'+it.n+'"':"")+">";st.push({lvl:it.lvl,tag})}
+    else h+="</li>";
+    h+="<li>"+inline(it.text);
+  });
+  while(st.length)h+="</li></"+st.pop().tag+">";
+  return h;
+}
+
+function blocksHtml(B){
+  return B.map(b=>{
+    switch(b.t){
+      case "code":return '<div class="cb"><div class="ch"><span>'+esc(b.lang||"kode")+'</span><button class="cp" type="button">Salin</button></div><pre><code>'+esc(b.text)+"</code></pre></div>";
+      case "h":{const n=Math.min(b.n+1,5);return "<h"+n+">"+inline(b.text)+"</h"+n+">"}
+      case "hr":return "<hr>";
+      case "quote":return "<blockquote>"+blocksHtml(parseBlocks(b.text))+"</blockquote>";
+      case "table":return '<div class="tw"><table><thead><tr>'+b.head.map(c=>"<th>"+inline(c)+"</th>").join("")+"</tr></thead><tbody>"+b.rows.map(r=>"<tr>"+b.head.map((_,k)=>"<td>"+inline(r[k]||"")+"</td>").join("")+"</tr>").join("")+"</tbody></table></div>";
+      case "list":return listHtml(b.items);
+      default:return "<p>"+inline(b.text).replace(/\n/g,"<br>")+"</p>";
+    }
+  }).join("");
+}
+
+// Memecah jawaban menjadi teks biasa dan blok file [[FILE: nama]]...[[/FILE]].
+function segmen(raw,streaming){
+  let t=String(raw);
+  if(streaming)t=t.replace(/(?:\[\[[^\]\n]*|\[\[\/FILE\]|\[)$/,"");
+  const out=[];let last=0,m;
+  const re=/\[\[FILE:\s*([^\]\n]+?)\s*\]\][ \t]*\n?([\s\S]*?)(\n?\[\[\/FILE\]\]|$)/g;
+  while((m=re.exec(t))){
+    if(m.index>last)out.push({t:"t",text:t.slice(last,m.index)});
+    out.push({t:"f",name:m[1].replace(/[\\/:*?"<>|]/g,"_").trim()||"file.txt",body:m[2].replace(/^```[\w+#.-]*\n/,"").replace(/\n```\s*$/,""),closed:!!m[3]});
+    last=re.lastIndex;if(m[0].length===0)re.lastIndex++;
+  }
+  if(last<t.length)out.push({t:"t",text:t.slice(last)});
+  return out;
+}
+
+// Pembuat .docx minimal (tanpa pustaka selain JSZip untuk membungkus).
+const xe=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"");
+function dRun(t,o){o=o||{};const f=o.code?"Consolas":"Calibri";return '<w:r><w:rPr><w:rFonts w:ascii="'+f+'" w:hAnsi="'+f+'" w:cs="'+f+'"/>'+(o.b?"<w:b/>":"")+(o.i?"<w:i/>":"")+'<w:sz w:val="'+(o.sz||22)+'"/></w:rPr><w:t xml:space="preserve">'+xe(t)+"</w:t></w:r>"}
+function dLine(text,base){
+  let out="",last=0,m;
+  const re=/(\*\*[^\n]+?\*\*|`[^`\n]+`|\*[^\s*][^*\n]*?\*|\[[^\]\n]+\]\(https?:\/\/[^\s)]+\))/g;
+  const add=(t,o)=>{if(t)out+=dRun(t,Object.assign({},base,o))};
+  while((m=re.exec(text))){
+    add(text.slice(last,m.index),{});const x=m[0];
+    if(x.startsWith("**"))add(x.slice(2,-2),{b:1});
+    else if(x[0]==="`")add(x.slice(1,-1),{code:1});
+    else if(x[0]==="*")add(x.slice(1,-1),{i:1});
+    else{const k=x.indexOf("](");add(x.slice(1,k)+" ("+x.slice(k+2,-1)+")",{})}
+    last=re.lastIndex;
+  }
+  add(text.slice(last),{});return out;
+}
+const dRuns=(text,base)=>String(text).split("\n").map(l=>dLine(l,base||{})).join("<w:r><w:br/></w:r>");
+const dP=(inner,ppr)=>"<w:p>"+(ppr?"<w:pPr>"+ppr+"</w:pPr>":"")+inner+"</w:p>";
+function docBody(B){
+  let x="";
+  B.forEach(b=>{
+    if(b.t==="h")x+=dP(dRuns(b.text,{b:1,sz:[0,36,30,26,24,22,22][b.n]||22}),'<w:keepNext/><w:spacing w:before="240" w:after="120"/>');
+    else if(b.t==="hr")x+=dP("",'<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="BFBFBF"/></w:pBdr>');
+    else if(b.t==="code"){b.text.split("\n").forEach(l=>{x+=dP(dRun(l||" ",{code:1,sz:20}),'<w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/><w:spacing w:after="0"/>')});x+=dP("")}
+    else if(b.t==="quote")x+=dP(dRuns(b.text,{i:1}),'<w:spacing w:after="120"/><w:ind w:left="560"/>');
+    else if(b.t==="list"){let k=0;b.items.forEach(it=>{k=it.ord?(it.n||k+1):0;x+=dP(dRun(it.ord?k+". ":"\u2022 ",{})+dLine(it.text,{}),'<w:spacing w:after="60"/><w:ind w:left="'+(360+360*it.lvl)+'" w:hanging="260"/>')})}
+    else if(b.t==="table"){
+      const n=Math.max(1,b.head.length),w=Math.floor(9400/n);
+      const cell=(t,hd)=>'<w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/>'+(hd?'<w:shd w:val="clear" w:color="auto" w:fill="EDEDED"/>':"")+"</w:tcPr>"+dP(dRuns(t,hd?{b:1}:{}),'<w:spacing w:after="40"/>')+"</w:tc>";
+      const bd=["top","left","bottom","right","insideH","insideV"].map(s=>"<w:"+s+' w:val="single" w:sz="4" w:space="0" w:color="BFBFBF"/>').join("");
+      x+='<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders>'+bd+"</w:tblBorders></w:tblPr><w:tblGrid>"+b.head.map(()=>'<w:gridCol w:w="'+w+'"/>').join("")+"</w:tblGrid><w:tr>"+b.head.map(c=>cell(c,1)).join("")+"</w:tr>"+b.rows.map(r=>"<w:tr>"+b.head.map((_,i)=>cell(r[i]||"",0)).join("")+"</w:tr>").join("")+"</w:tbl>"+dP("");
+    }
+    else x+=dP(dRuns(b.text,{}),'<w:spacing w:after="120"/>');
+  });
+  return x;
+}
+function docFiles(text){
+  return {
+    ct:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
+    rels:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
+    doc:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+docBody(parseBlocks(text))+dP("")+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>'
+  };
+}
+/*PURE-END*/
+
+/* ---------- unduh file buatan Zeta ---------- */
+const LIB={
+  pdf:"https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js",
+  zip:"https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+  xlsx:"https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+};
+const loaded={};
+function muat(u){
+  return loaded[u]||(loaded[u]=new Promise((ok,no)=>{
+    const s=document.createElement("script");s.src=u;s.onload=ok;
+    s.onerror=()=>{delete loaded[u];no(new Error("pustaka tidak bisa dimuat, periksa koneksi internet"))};
+    document.head.appendChild(s);
+  }));
+}
+function simpan(blob,name){
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+}
+async function buatPdf(name,text){
+  await muat(LIB.pdf);
+  const el=document.createElement("div");el.className="pdfdoc md";el.innerHTML=blocksHtml(parseBlocks(text));
+  await html2pdf().set({margin:[14,14,14,14],filename:name,image:{type:"jpeg",quality:.96},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},pagebreak:{mode:["css","legacy"],avoid:["tr","pre","h2","h3"]}}).from(el).save();
+}
+async function buatDocx(text){
+  await muat(LIB.zip);
+  const f=docFiles(text),z=new JSZip();
+  z.file("[Content_Types].xml",f.ct);z.file("_rels/.rels",f.rels);z.file("word/document.xml",f.doc);
+  return z.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
+}
+async function buatXlsx(name,text){
+  await muat(LIB.xlsx);
+  const t=text.trim();let wb;
+  if(t.startsWith("|")){
+    const tb=parseBlocks(t).find(b=>b.t==="table");
+    wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tb?[tb.head].concat(tb.rows):[[t]]),"Sheet1");
+  }else wb=XLSX.read(t,{type:"string"});
+  XLSX.writeFile(wb,name);
+}
+async function unduh(name,body,btn){
+  const ext=(name.split(".").pop()||"").toLowerCase();
+  const lama=btn&&btn.textContent;
+  if(btn){btn.disabled=true;btn.textContent="Menyiapkan…"}
+  try{
+    if(ext==="pdf")await buatPdf(name,body);
+    else if(ext==="docx")simpan(await buatDocx(body),name);
+    else if(ext==="xlsx")await buatXlsx(name,body);
+    else{
+      const mime={html:"text/html",htm:"text/html",svg:"image/svg+xml",json:"application/json",csv:"text/csv",css:"text/css",js:"text/javascript",md:"text/markdown",xml:"application/xml"}[ext]||"text/plain";
+      simpan(new Blob([ext==="csv"?"\uFEFF"+body:body],{type:mime+";charset=utf-8"}),name);
+    }
+  }catch(e){toast("Gagal membuat file: "+e.message)}
+  finally{if(btn){btn.disabled=false;btn.textContent=lama}}
+}
+
+/* ---------- tampilan pesan ---------- */
+function fileCard(s,streaming){
+  const ext=(s.name.split(".").pop()||"").toLowerCase();
+  const c=document.createElement("div");c.className="fc";
+  const h=document.createElement("div");h.className="fh";
+  const ic=document.createElement("div");ic.className="fi";ic.innerHTML=ICON.file;
+  const meta=document.createElement("div");meta.className="fm";
+  const n=document.createElement("div");n.className="fn";n.textContent=s.name;
+  const sub=document.createElement("div");sub.className="fs";
+  const bytes=new Blob([s.body]).size;
+  const siap=s.closed||!streaming;
+  sub.textContent=siap?(ext.toUpperCase()||"FILE")+" · "+(bytes<1024?bytes+" B":(bytes/1024).toFixed(1)+" KB"):"Menulis file…";
+  meta.append(n,sub);h.append(ic,meta);
+  const bt=document.createElement("div");bt.className="fbt";
+  const pv=document.createElement("pre");pv.className="fp";pv.hidden=true;pv.textContent=s.body;
+  const mk=(txt,cls,fn)=>{const b=document.createElement("button");b.type="button";b.className="fb "+cls;b.textContent=txt;b.onclick=fn;if(!siap)b.disabled=true;bt.appendChild(b)};
+  mk("Lihat","",()=>{pv.hidden=!pv.hidden});
+  mk("Unduh","pri",e=>unduh(s.name,s.body,e.currentTarget));
+  h.appendChild(bt);c.append(h,pv);return c;
+}
+
+const plain=raw=>String(raw).replace(/\[\[FILE:[\s\S]*?(\[\[\/FILE\]\]|$)/g,"").trim()||String(raw).trim();
+async function salin(t){
+  try{await navigator.clipboard.writeText(t)}
+  catch(e){const x=document.createElement("textarea");x.value=t;document.body.appendChild(x);x.select();try{document.execCommand("copy")}catch(_){}x.remove()}
+  toast("Disalin");
+}
+log.addEventListener("click",e=>{const b=e.target.closest(".cp");if(b){const pre=b.closest(".cb").querySelector("pre");salin(pre.innerText)}});
+
+function actions(raw,o){
+  const a=document.createElement("div");a.className="acts";
+  const mk=(ic,label,fn)=>{const b=document.createElement("button");b.className="ab";b.type="button";b.innerHTML=ic+"<span></span>";b.lastChild.textContent=label;b.onclick=fn;a.appendChild(b)};
+  if(raw)mk(ICON.copy,"Salin",()=>salin(plain(raw)));
+  if(o.err)mk(ICON.redo,"Coba lagi",()=>regen());
+  else if(o.isLast){
+    mk(ICON.redo,"Ulangi",()=>regen());
+    if(o.cut)mk(ICON.next,"Lanjutkan",()=>send("Lanjutkan jawabanmu dari bagian terakhir, tanpa mengulang yang sudah ditulis."));
+  }
+  return a;
+}
+function botRow(){
+  const r=document.createElement("div");r.className="r";
+  const a=document.createElement("img");a.className="av";a.alt="";a.src=LOGO;
+  const bd=document.createElement("div");bd.className="bd";
+  r.append(a,bd);log.appendChild(r);return bd;
+}
+function paintBot(bd,raw,o){
+  bd.innerHTML="";
+  const segs=segmen(raw,o.streaming);
+  const ada=segs.some(s=>s.t==="f"||s.text.trim());
+  segs.forEach(s=>{
+    if(s.t==="t"){if(!s.text.trim())return;const d=document.createElement("div");d.className="md";d.innerHTML=blocksHtml(parseBlocks(s.text));bd.appendChild(d)}
+    else bd.appendChild(fileCard(s,o.streaming));
+  });
+  if(o.err){const d=document.createElement("div");d.className="md errt";d.textContent="Maaf, ada gangguan: "+o.err;bd.appendChild(d)}
+  if(o.streaming&&(!ada||o.status)){
+    const w=document.createElement("div");w.className="wait";
+    w.innerHTML='<span class="dots"><i></i><i></i><i></i></span>';
+    if(o.status){const t=document.createElement("span");t.textContent=o.status;w.appendChild(t)}
+    bd.appendChild(w);
+  }
+  if(!o.streaming)bd.appendChild(actions(raw,o));
+}
+function addUser(text,att){
+  const d=document.createElement("div");d.className="m u";
   if(att&&att.length){
     const c=document.createElement("div");c.className="chips";
     att.forEach(a=>{const s=document.createElement("div");s.className="chip";
@@ -185,13 +495,17 @@ function add(role,text,att){
     d.appendChild(c);
   }
   const t=document.createElement("span");t.textContent=text;d.appendChild(t);
-  log.appendChild(d);log.scrollTop=log.scrollHeight;return t;
+  log.appendChild(d);log.scrollTop=log.scrollHeight;
 }
-function renderLog(){
-  log.innerHTML="";
+function renderLog(keep){
+  const st=log.scrollTop;log.innerHTML="";
   const c=getCur();
   if(!c||!c.msgs.length){const h=document.createElement("div");h.className="hint";h.id="hint";h.textContent="Halo, aku Zeta. Tanya apa saja atau minta bantuan mengerjakan tugas.";log.appendChild(h);return}
-  c.msgs.forEach(m=>add(m.role==="user"?"u":"b",m.content,m.att));
+  c.msgs.forEach((m,k)=>{
+    if(m.role==="user")addUser(m.content,m.att);
+    else paintBot(botRow(),m.content,{streaming:false,isLast:k===c.msgs.length-1,cut:m.cut});
+  });
+  log.scrollTop=keep?st:log.scrollHeight;
 }
 
 /* riwayat */
@@ -274,12 +588,18 @@ pm.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{
 ["fFile","fImg","fCam"].forEach(id=>$(id).onchange=e=>{const fs=[...e.target.files];e.target.value="";addFiles(fs)});
 
 /* kirim */
+let ac=null;
 function autosize(){inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,160)+"px"}
 inp.addEventListener("input",autosize);
-async function send(){
-  const text=inp.value.trim();if((!text&&!pend.length)||busy)return;
+function setBusy(b){busy=b;btn.textContent=b?"Stop":"Kirim";btn.classList.toggle("stop",b);btn.disabled=false}
+
+async function send(override){
+  const text=(typeof override==="string"?override:inp.value).trim();
+  if((!text&&!pend.length)||busy)return;
   let c=getCur();
   if(!c){c={id:Date.now().toString(36),title:"",msgs:[],t:Date.now()};chats.unshift(c);cur=c.id}
+  // pesan sebelumnya yang gagal dijawab dibuang supaya tidak ada dua pesan pengguna berurutan
+  if(c.msgs.length&&c.msgs[c.msgs.length-1].role==="user")c.msgs.pop();
   const h=$("hint");if(h)h.remove();
   let api=text,imgs=[],att=[];
   pend.forEach(f=>{
@@ -292,25 +612,79 @@ async function send(){
   c.msgs.push({role:"user",content:shown,api,att});
   if(!c.title)c.title=(text||att[0].name).slice(0,40);
   c.t=Date.now();
-  pend=[];renderPend();inp.value="";autosize();
-  busy=true;btn.disabled=true;renderList();
-  add("u",shown,att);
-  const out=add("b","…");
+  pend=[];renderPend();
+  if(typeof override!=="string"){inp.value="";autosize()}
+  save();
+  renderLog();
+  renderList();
+  await jalankan(c,imgs);
+}
+
+async function jalankan(c,imgs){
+  setBusy(true);
+  const bd=botRow();
+  let raw="",status="",cut=false,err="",stopped=false,terjadwal=false;
+  const dekat=()=>log.scrollHeight-log.scrollTop-log.clientHeight<140;
+  const gambar=()=>{
+    if(terjadwal)return;terjadwal=true;
+    requestAnimationFrame(()=>{terjadwal=false;const n=dekat();paintBot(bd,raw,{streaming:true,status});if(n)log.scrollTop=log.scrollHeight});
+  };
+  paintBot(bd,"",{streaming:true,status:""});log.scrollTop=log.scrollHeight;
+  ac=new AbortController();
   try{
     const body={messages:c.msgs.map(m=>({role:m.role,content:m.api||m.content}))};
-    if(imgs.length)body.attachments=imgs;
-    const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.error||"Gagal");
-    out.textContent=d.text;c.msgs.push({role:"assistant",content:d.text});
+    if(imgs&&imgs.length)body.attachments=imgs;
+    const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:ac.signal});
+    const ct=r.headers.get("content-type")||"";
+    if(!r.ok||ct.indexOf("ndjson")<0){
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(d.error||"Gagal");
+      raw=d.text||"";cut=!!d.terpotong;
+    }else{
+      const rd=r.body.getReader(),dec=new TextDecoder();let buf="";
+      for(;;){
+        const {value,done}=await rd.read();
+        if(done)break;
+        buf+=dec.decode(value,{stream:true});
+        let k;
+        while((k=buf.indexOf("\n"))>=0){
+          const ln=buf.slice(0,k).trim();buf=buf.slice(k+1);
+          if(!ln)continue;
+          let o;try{o=JSON.parse(ln)}catch(e){continue}
+          if(o.t){raw+=o.t;status="";gambar()}
+          else if(o.s){status=o.s;gambar()}
+          else if(o.e)throw new Error(o.e);
+          else if(o.done)cut=!!o.cut;
+        }
+      }
+    }
   }catch(e){
-    out.textContent="Maaf, ada gangguan: "+e.message;c.msgs.pop();
-    if(!c.msgs.length){chats=chats.filter(x=>x!==c);cur=null}
+    if(e&&e.name==="AbortError")stopped=true;else err=e.message||"Gagal";
   }
-  save();renderList();
-  busy=false;btn.disabled=false;inp.focus();
+  ac=null;
+  if(raw||stopped){
+    if(!raw)raw="(dihentikan)";
+    else if(err){raw+="\n\n_(Jawaban terputus: "+err+")_";cut=true}
+    else if(stopped)raw+="\n\n_(dihentikan)_";
+    c.msgs.push({role:"assistant",content:raw,cut:cut||undefined});
+    save();setBusy(false);renderList();renderLog(true);
+  }else{
+    setBusy(false);renderList();
+    paintBot(bd,"",{streaming:false,err:err||"Gagal"});
+  }
+  inp.focus();
 }
-btn.onclick=send;
+
+// Ulangi jawaban terakhir (atau coba lagi setelah gagal)
+function regen(){
+  if(busy)return;
+  const c=getCur();if(!c)return;
+  while(c.msgs.length&&c.msgs[c.msgs.length-1].role==="assistant")c.msgs.pop();
+  if(!c.msgs.length)return;
+  save();renderLog();jalankan(c,[]);
+}
+
+btn.onclick=()=>{if(busy){if(ac)ac.abort()}else send()};
 inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});
 
 /* dialog */
