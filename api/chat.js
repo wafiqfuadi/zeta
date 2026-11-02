@@ -1,4 +1,3 @@
-
 // =====================================================================
 // Zeta - api/chat.js
 // Respons JSON: { text, terpotong }  (cocok dengan index.html)
@@ -61,29 +60,53 @@ function normal(teks) {
     .trim();
 }
 
+const JAWABAN_ASAL_ID =
+  "Aku Zeta, asisten AI dari Indonesia 🇮🇩 Aku tinggal di internet, jadi bisa kamu ajak ngobrol dari mana saja. Ada yang bisa aku bantu? 😊";
+const JAWABAN_ASAL_EN =
+  "I'm Zeta, an AI assistant from Indonesia 🇮🇩 I live on the internet, so you can chat with me from anywhere. How can I help? 😊";
+
+// Dua jenis pertanyaan yang berbeda:
+// - ASAL ("kamu dari mana?", "kamu orang mana?")        -> JAWABAN_ASAL
+// - PEMBUAT ("siapa yang buat kamu?", "pembuatmu siapa") -> JAWABAN_ID
 function jawabanIdentitas(teks) {
   const t = normal(teks);
   if (!t || t.length > 80) return null;
 
-  if (/(who (made|created|built|developed|designed) you|who is your (creator|developer|maker|owner)|where are you from|who owns you)/.test(t)) {
+  if (/(where are you from|where do you come from|what country are you from)/.test(t)) return JAWABAN_ASAL_EN;
+  if (/(who (made|created|built|developed|designed) you|who is your (creator|developer|maker|owner)|who owns you)/.test(t)) {
     return JAWABAN_EN;
   }
+
   const k = "(?:kamu|km|mu|zeta|anda|lu|lo|kau|engkau|ente)";
-  const pola = [
+  const sisaPendek = (m) => t.length - (m.index + m[0].length) <= 12;
+
+  // Pembuat
+  const polaPembuat = [
     new RegExp("siapa (?:yang |sih yang |sih )?(?:buat|bikin|membuat|menciptakan|ciptakan|mengembangkan|kembangkan)\\s*" + k + "\\b"),
     new RegExp("(?:buat|bikin|membuat|menciptakan|mengembangkan)\\s*" + k + "\\s*(?:itu |tuh )?siapa"),
     new RegExp("(?:pembuat|pencipta|pengembang|developer|creator|owner|pemilik)(?:mu|\\s+" + k + ")\\b"),
     new RegExp(k + ".{0,12}(?:dibuat|dibikin|diciptakan|dikembangkan)"),
-    new RegExp(k + "\\s*(?:itu |tuh )?(?:dari\\s?mana|berasal dari mana|asalnya dari mana)"),
-    new RegExp("(?:buatan|ciptaan|bikinan)\\s*siapa"),
-    /asal(?:mu| kamu| zeta| usulmu)/
+    new RegExp("(?:buatan|ciptaan|bikinan)\\s*siapa")
   ];
-  for (let i = 0; i < pola.length; i++) {
-    const m = pola[i].exec(t);
+  for (let i = 0; i < polaPembuat.length; i++) {
+    const m = polaPembuat[i].exec(t);
     if (!m) continue;
     if ((i === 2 || i === 3) && !/siapa/.test(t)) continue;
-    if (t.length - (m.index + m[0].length) > 12) continue;
+    if (!sisaPendek(m)) continue;
     return JAWABAN_ID;
+  }
+
+  // Asal
+  const polaAsal = [
+    new RegExp(k + "\\s*(?:itu |tuh )?(?:berasal |datang )?dari\\s?mana"),
+    new RegExp(k + "\\s*orang\\s*mana"),
+    /(?:buatan|bikinan|produksi)\s*mana/,
+    /asalnya dari mana/,
+    /asal(?:mu| kamu| zeta| usulmu)/
+  ];
+  for (const re of polaAsal) {
+    const m = re.exec(t);
+    if (m && sisaPendek(m)) return JAWABAN_ASAL_ID;
   }
 
   if (t.includes("wafiq") && /(siapa|siapakah|who|kenal|tahu|tentang|about|profil|biodata|ceritakan|jelaskan|tell)/.test(t)) {
