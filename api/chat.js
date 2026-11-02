@@ -1,50 +1,43 @@
-// ============================================================================
-// ZETA AI - ULTIMATE CORE BACKEND ARCHITECTURE
-// Pembuat: Wafiq Fuadi (AI Research & Safety)
-// Fitur Utama: Deep Reasoning, Agentic Self-Correction, Multi-Step Planning,
-//               Emotional Intelligence & Empathy, Multimodal & Code Canvas Gen
-// ============================================================================
+// Urutan model: coba yang lebih pintar dulu, kalau gagal (misal kuota habis) pakai berikutnya.
+const MODELS = process.env.GEMINI_MODELS
+  ? process.env.GEMINI_MODELS.split(",").map(s => s.trim()).filter(Boolean)
+  : ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
 
-const MODELS = ["gemini-1.5-flash", "gemini-1.5-pro"];
+const MAKS_PUTARAN = 6;
+const BATAS_WAKTU_ALAT_MS = 30000;
 
-const MAKS_PUTARAN = 8;
-const BATAS_WAKTU_ALAT_MS = 35000;
-const BATAS_TOTAL_MS = 55000;
-
-const UA_BOT = "Mozilla/5.0 (compatible; ZetaBot/2.0; +https://wafiqfuadi.ai)";
+const UA_BOT = "Mozilla/5.0 (compatible; ZetaBot/1.0)";
 const UA_BROWSER =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
 // KUNCI RAHASIA UNTUK VERIFIKASI PEMBUAT
 const KUNCI_PEMBUAT = "WF-SECURE-290108";
 
-/* ============================================================================
- * 1. DEFINISI ALAT (FUNCTION DECLARATIONS & EXTENDED AGENT TOOLS)
- * ============================================================================ */
 const ALAT = [
   {
     functionDeclarations: [
       {
         name: "cari_web",
         description:
-          "Cari informasi terkini di seluruh web: hasil mesin pencari, berita Google News, Wikipedia Indonesia & Inggris, serta artikel umum. " +
-          "Gunakan untuk fakta terbaru, peristiwa terkini, riset mendalam, atau hal yang membutuhkan sumber eksternal valid.",
+          "Cari informasi di seluruh web: hasil mesin pencari, berita Google News, Wikipedia Indonesia dan Inggris. " +
+          "Pakai untuk berita, fakta, tokoh, produk, peristiwa, atau apa pun yang bisa berubah atau tidak kamu yakini. " +
+          "Boleh dipanggil beberapa kali dengan kata kunci berbeda (coba juga versi bahasa Inggris).",
         parameters: {
           type: "OBJECT",
-          properties: { query: { type: "STRING", description: "Kata kunci pencarian spesifik dan relevan" } },
+          properties: { query: { type: "STRING", description: "Kata kunci pencarian yang singkat dan spesifik" } },
           required: ["query"]
         }
       },
       {
         name: "baca_halaman",
         description:
-          "Baca isi teks lengkap dari sebuah URL web (artikel, dokumentasi, paper). " +
-          "Gunakan untuk memperdalam analisis dari hasil pencarian web.",
+          "Baca isi sebuah halaman web (artikel, dokumentasi, dll.) dari URL-nya. Pakai untuk memperdalam hasil cari_web atau membaca URL yang diberikan pengguna. " +
+          "Jangan menebak URL; hanya pakai URL dari hasil pencarian atau dari pengguna.",
         parameters: {
           type: "OBJECT",
           properties: {
-            url: { type: "STRING", description: "URL lengkap diawali http:// atau https://" },
-            mulai: { type: "INTEGER", description: "Posisi karakter awal pembacaan (default 0)" }
+            url: { type: "STRING", description: "URL lengkap, diawali http:// atau https://" },
+            mulai: { type: "INTEGER", description: "Posisi karakter awal untuk membaca bagian berikutnya dari halaman panjang (default 0)" }
           },
           required: ["url"]
         }
@@ -52,85 +45,72 @@ const ALAT = [
       {
         name: "hitung",
         description:
-          "Kalkulator presisi tinggi untuk perhitungan matematika rumit, statistik, dan ekspresi aljabar. " +
-          "Mendukung fungsi sqrt, abs, sin, cos, tan, log, exp, faktorial (fakt), matematika simbolik, dan konstanta pi/e.",
+          "Kalkulator yang tepat untuk perhitungan matematika. Pakai untuk hitungan yang tidak sepele supaya angkanya akurat dan tidak ditebak. " +
+          "Mendukung + - * / % ^ (pangkat), tanda kurung, fungsi sqrt, abs, sin, cos, tan (radian), asin, acos, atan, ln, log (basis 10), exp, round, floor, ceil, fakt (faktorial), serta konstanta pi dan e. " +
+          "Tulis angka dengan titik sebagai desimal dan tanpa pemisah ribuan, contoh: (1500000*0.12)/12 atau sqrt(2)^3.",
         parameters: {
           type: "OBJECT",
-          properties: { ekspresi: { type: "STRING", description: "Ekspresi matematika standar, contoh: (1500000*0.12)/12 atau sqrt(2)^3" } },
+          properties: { ekspresi: { type: "STRING", description: "Ekspresi matematika, contoh: 2^10 + sqrt(144)" } },
           required: ["ekspresi"]
         }
       },
       {
         name: "cuaca",
-        description: "Prakiraan cuaca terkini dan 3 hari ke depan untuk kota tertentu.",
+        description: "Ambil cuaca saat ini dan prakiraan 3 hari untuk sebuah kota.",
         parameters: {
           type: "OBJECT",
-          properties: { kota: { type: "STRING", description: "Nama kota, contoh: Jakarta, Klaten, Tokyo" } },
+          properties: { kota: { type: "STRING", description: "Nama kota, contoh: Klaten" } },
           required: ["kota"]
         }
       },
       {
         name: "kurs",
-        description: "Kurs mata uang terkini dan analisis konversi nilai tukar.",
+        description: "Kurs mata uang terkini dan konversi jumlah uang (contoh: USD ke IDR).",
         parameters: {
           type: "OBJECT",
           properties: {
-            dari: { type: "STRING", description: "Kode mata uang asal (3 huruf), contoh: USD" },
-            ke: { type: "STRING", description: "Kode mata uang tujuan (3 huruf), contoh: IDR" },
-            jumlah: { type: "NUMBER", description: "Jumlah nominal yang dikonversi (default 1)" }
+            dari: { type: "STRING", description: "Kode mata uang asal, 3 huruf, contoh USD" },
+            ke: { type: "STRING", description: "Kode mata uang tujuan, 3 huruf, contoh IDR" },
+            jumlah: { type: "NUMBER", description: "Jumlah yang dikonversi (default 1)" }
           },
           required: ["dari", "ke"]
         }
       },
       {
         name: "kripto",
-        description: "Harga mata uang kripto terkini beserta tren perubahan 24 jam.",
+        description: "Harga terkini mata uang kripto beserta perubahan 24 jam.",
         parameters: {
           type: "OBJECT",
           properties: {
-            koin: { type: "STRING", description: "ID atau nama koin, contoh: bitcoin, ethereum, solana" },
-            mata_uang: { type: "STRING", description: "Pembanding mata uang (default: usd,idr)" }
+            koin: { type: "STRING", description: "Nama atau id koin, contoh: bitcoin, ethereum, solana" },
+            mata_uang: { type: "STRING", description: "Mata uang pembanding, pisahkan dengan koma. Default: usd,idr" }
           },
           required: ["koin"]
         }
       },
       {
         name: "cari_jurnal",
-        description: "Cari publikasi akademik, paper ilmiah, dan studi resmi via Crossref.",
+        description: "Cari makalah ilmiah, jurnal, dan publikasi akademik (Crossref).",
         parameters: {
           type: "OBJECT",
-          properties: { query: { type: "STRING", description: "Topik atau kata kunci riset ilmiah" } },
+          properties: { query: { type: "STRING", description: "Topik atau judul penelitian (lebih baik dalam bahasa Inggris)" } },
           required: ["query"]
         }
       },
       {
         name: "cari_teknis",
-        description: "Cari pertanyaan/jawaban pemrograman StackOverflow & repositori GitHub.",
+        description: "Cari pertanyaan dan solusi pemrograman di StackOverflow serta repositori open source di GitHub.",
         parameters: {
           type: "OBJECT",
-          properties: { query: { type: "STRING", description: "Masalah koding, nama library, atau error log" } },
+          properties: { query: { type: "STRING", description: "Masalah teknis atau nama library/proyek (lebih baik dalam bahasa Inggris)" } },
           required: ["query"]
-        }
-      },
-      {
-        name: "generate_image",
-        description: "Buat atau hasilkan gambar baru berdasarkan deskripsi teks rinci.",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            prompt: { type: "STRING", description: "Deskripsi rinci visual gambar yang ingin dibuat" },
-            style: { type: "STRING", description: "Gaya visual, contoh: realistic, anime, digital art, 3d, cinematic" }
-          },
-          required: ["prompt"]
         }
       }
     ]
   }
 ];
 
-/* ============================================================================
- * 2. UTILITAS PERHITUNGAN & PENCARIAN SYSTEM
- * ============================================================================ */
+/* ---------- Utilitas ---------- */
 
 async function ambil(url, json, ua, ms) {
   const r = await fetch(url, {
@@ -160,6 +140,8 @@ function hapusTag(s) {
   return bersihkan(String(s || "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 }
 
+/* ---------- hitung (kalkulator) ---------- */
+
 function hitungRumus(teks) {
   const s = String(teks || "")
     .toLowerCase()
@@ -175,7 +157,7 @@ function hitungRumus(teks) {
     asin: Math.asin, acos: Math.acos, atan: Math.atan, ln: Math.log, log: Math.log10,
     exp: Math.exp, round: Math.round, floor: Math.floor, ceil: Math.ceil,
     fakt: n => {
-      if (!Number.isInteger(n) || n < 0 || n > 170) throw new Error("Faktorial bilangan bulat 0-170");
+      if (!Number.isInteger(n) || n < 0 || n > 170) throw new Error("Faktorial hanya untuk bilangan bulat 0 sampai 170");
       let h = 1;
       for (let k = 2; k <= n; k++) h *= k;
       return h;
@@ -229,7 +211,7 @@ function hitungRumus(teks) {
       i += nama.length;
       if (punya(konst, nama)) return konst[nama];
       if (punya(fungsi, nama)) {
-        if (s[i] !== "(") throw new Error("Fungsi " + nama + " butuh kurung");
+        if (s[i] !== "(") throw new Error("Fungsi " + nama + " perlu tanda kurung");
         i++;
         const v = ekspr();
         if (s[i] !== ")") throw new Error("Kurung tidak seimbang");
@@ -238,12 +220,12 @@ function hitungRumus(teks) {
       }
       throw new Error("Nama tidak dikenal: " + nama);
     }
-    throw new Error("Karakter tidak dikenal posisi " + i);
+    throw new Error("Karakter tidak dikenal pada posisi " + i);
   }
 
   const hasil = ekspr();
-  if (i !== s.length) throw new Error("Ekspresi tidak lengkap");
-  if (!Number.isFinite(hasil)) throw new Error("Hasil tidak terdefinisi");
+  if (i !== s.length) throw new Error("Ekspresi tidak lengkap atau ada karakter tidak dikenal");
+  if (!Number.isFinite(hasil)) throw new Error("Hasil tidak terdefinisi (misalnya pembagian dengan nol)");
   return Number(hasil.toPrecision(15));
 }
 
@@ -252,8 +234,13 @@ function alatHitung(args) {
   return { ekspresi, hasil: hitungRumus(ekspresi) };
 }
 
+/* ---------- cari_web ---------- */
+
 async function cariBerita(q) {
-  const xml = await ambil("https://news.google.com/rss/search?q=" + encodeURIComponent(q) + "&hl=id&gl=ID&ceid=ID:id", false);
+  const xml = await ambil(
+    "https://news.google.com/rss/search?q=" + encodeURIComponent(q) + "&hl=id&gl=ID&ceid=ID:id",
+    false
+  );
   return xml.split("<item>").slice(1, 7).map(it => {
     const t = bersihkan((it.match(/<title>([\s\S]*?)<\/title>/) || [])[1]);
     const d = bersihkan((it.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]);
@@ -265,7 +252,8 @@ async function cariBerita(q) {
 async function cariWikipedia(q, bahasa) {
   const d = await ambil(
     "https://" + bahasa + ".wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" +
-      encodeURIComponent(q) + "&gsrlimit=3&prop=extracts&exintro=1&explaintext=1&exchars=700&format=json&origin=*",
+      encodeURIComponent(q) +
+      "&gsrlimit=3&prop=extracts&exintro=1&explaintext=1&exchars=700&format=json&origin=*",
     true
   );
   const pages = d.query && d.query.pages ? Object.values(d.query.pages) : [];
@@ -282,7 +270,9 @@ function urai_ddg(html) {
     try {
       const u = new URL(href);
       if (u.searchParams.get("uddg")) href = u.searchParams.get("uddg");
-    } catch (e) { continue; }
+    } catch (e) {
+      continue;
+    }
     const judul = hapusTag(m[2]);
     const sn = (m[3].match(/class="result__snippet"[^>]*>([\s\S]*?)<\/a>/) || [])[1];
     hasil.push("- [Web] " + judul + (sn ? ": " + hapusTag(sn).slice(0, 300) : "") + " " + href);
@@ -304,8 +294,10 @@ async function cariTavily(q) {
   });
   if (!r.ok) throw new Error("Tavily HTTP " + r.status);
   const d = await r.json();
-  const baris = (d.results || []).map(x => "- [Web] " + bersihkan(x.title) + ": " + bersihkan(String(x.content || "").slice(0, 400)) + " " + x.url);
-  if (d.answer) baris.unshift("- [Ringkasan Web] " + bersihkan(d.answer));
+  const baris = (d.results || []).map(
+    x => "- [Web] " + bersihkan(x.title) + ": " + bersihkan(String(x.content || "").slice(0, 400)) + " " + x.url
+  );
+  if (d.answer) baris.unshift("- [Ringkasan web] " + bersihkan(d.answer));
   return baris;
 }
 
@@ -316,8 +308,10 @@ async function alatCariWeb(args) {
   sumber.unshift(process.env.TAVILY_API_KEY ? cariTavily(q) : cariDuckDuckGo(q));
   const hasil = await Promise.allSettled(sumber);
   const baris = hasil.filter(h => h.status === "fulfilled").flatMap(h => h.value);
-  return { hasil: baris.length ? baris.join("\n").slice(0, 9000) : "Tidak ada hasil." };
+  return { hasil: baris.length ? baris.join("\n").slice(0, 9000) : "Tidak ada hasil. Coba kata kunci lain." };
 }
+
+/* ---------- baca_halaman ---------- */
 
 function urlAman(u) {
   let x;
@@ -339,28 +333,37 @@ function htmlKeTeks(html) {
     .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/<\/(p|div|h[1-6]|li|tr|section|article)>|<br\s*\/?>/gi, "\n")
     .replace(/<[^>]+>/g, " ");
-  t = bersihkan(t).replace(/[ \t\r\f\v]+/g, " ").replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  t = bersihkan(t)
+    .replace(/[ \t\r\f\v]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
   return { judul, teks: t };
 }
 
 async function ambilHalaman(u) {
   let url = urlAman(u);
-  if (!url) throw new Error("URL tidak valid");
+  if (!url) throw new Error("URL tidak valid atau tidak diizinkan");
   for (let i = 0; i < 4; i++) {
     const r = await fetch(url.href, {
       redirect: "manual",
       signal: AbortSignal.timeout(8000),
-      headers: { "user-agent": UA_BROWSER, accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5" }
+      headers: {
+        "user-agent": UA_BROWSER,
+        accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5",
+        "accept-language": "id,en;q=0.8"
+      }
     });
     const lokasi = r.headers.get("location");
     if (r.status >= 300 && r.status < 400 && lokasi) {
       url = urlAman(new URL(lokasi, url).href);
-      if (!url) throw new Error("Pengalihan tidak aman");
+      if (!url) throw new Error("Pengalihan ke alamat yang tidak diizinkan");
       continue;
     }
     if (!r.ok) throw new Error("HTTP " + r.status);
     const jenis = (r.headers.get("content-type") || "").toLowerCase();
-    if (!/text\/|json|xml/.test(jenis)) throw new Error("Bukan halaman teks");
+    if (!/text\/|json|xml/.test(jenis)) throw new Error("Bukan halaman teks (" + (jenis || "tidak diketahui") + ")");
+    if (Number(r.headers.get("content-length") || 0) > 4000000) throw new Error("Halaman terlalu besar");
     const mentah = (await r.text()).slice(0, 1500000);
     if (/html/.test(jenis)) return Object.assign({ url: url.href }, htmlKeTeks(mentah));
     return { url: url.href, judul: "", teks: mentah };
@@ -376,73 +379,172 @@ async function alatBacaHalaman(args) {
     try {
       const j = await ambil("https://r.jina.ai/" + u, false);
       if (j && j.length > h.teks.length) h = { url: u, judul: h.judul, teks: j };
-    } catch (e) {}
+    } catch (e) { /* abaikan */ }
   }
-  if (!h.teks) return { error: "Halaman kosong" };
+  if (!h.teks) return { error: "Halaman tidak berisi teks yang bisa dibaca" };
   const potong = h.teks.slice(mulai, mulai + 9000);
-  return { url: h.url, judul: h.judul, isi: potong, total_karakter: h.teks.length };
+  return {
+    url: h.url,
+    judul: h.judul,
+    isi: potong,
+    total_karakter: h.teks.length,
+    ada_lanjutan: mulai + 9000 < h.teks.length ? "Ya, panggil lagi dengan mulai=" + (mulai + 9000) : "Tidak"
+  };
 }
+
+/* ---------- Alat data lain ---------- */
 
 async function ambilCuaca(kota) {
   if (!kota) return { error: "Nama kota kosong" };
-  const g = await ambil("https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(kota) + "&count=1&language=id&format=json", true);
+  const g = await ambil(
+    "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(kota) + "&count=1&language=id&format=json",
+    true
+  );
   const t = g.results && g.results[0];
   if (!t) return { error: "Kota tidak ditemukan" };
   const w = await ambil(
     "https://api.open-meteo.com/v1/forecast?latitude=" + t.latitude + "&longitude=" + t.longitude +
       "&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m" +
-      "&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=3",
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
+      "&timezone=auto&forecast_days=3",
     true
   );
-  return { lokasi: [t.name, t.admin1, t.country].filter(Boolean).join(", "), saat_ini: w.current, prakiraan: w.daily };
+  return {
+    lokasi: [t.name, t.admin1, t.country].filter(Boolean).join(", "),
+    saat_ini: w.current,
+    satuan_saat_ini: w.current_units,
+    prakiraan_3_hari: w.daily,
+    satuan_prakiraan: w.daily_units,
+    catatan: "weather_code mengikuti kode cuaca WMO"
+  };
+}
+
+async function trenKurs(dari, ke) {
+  const f = d => d.toISOString().slice(0, 10);
+  const akhir = new Date();
+  const awal = new Date(akhir.getTime() - 35 * 864e5);
+  const h = await ambil(
+    "https://api.frankfurter.dev/v1/" + f(awal) + ".." + f(akhir) + "?base=" + dari + "&symbols=" + ke,
+    true, null, 4000
+  );
+  const tgl = Object.keys(h.rates || {}).sort();
+  const data = tgl.map(t => ({ tanggal: t, kurs: h.rates[t][ke] })).filter(x => typeof x.kurs === "number");
+  if (data.length < 4) return null;
+  const terakhir = data[data.length - 1];
+  const batas7 = new Date(new Date(terakhir.tanggal).getTime() - 7 * 864e5).toISOString().slice(0, 10);
+  const tujuh = data.filter(x => x.tanggal <= batas7).pop() || data[0];
+  const pawalData = data[0];
+  const nilai = data.map(x => x.kurs);
+  const persen = (a, b) => Number(((a / b - 1) * 100).toFixed(2));
+  return {
+    kurs_terakhir_ecb: terakhir,
+    sekitar_7_hari_sebelumnya: tujuh,
+    perubahan_7_hari_persen: persen(terakhir.kurs, tujuh.kurs),
+    awal_periode: pawalData,
+    perubahan_periode_persen: persen(terakhir.kurs, pawalData.kurs),
+    tertinggi: Math.max.apply(null, nilai),
+    terendah: Math.min.apply(null, nilai),
+    catatan: "Data referensi harian dari Bank Sentral Eropa."
+  };
 }
 
 async function ambilKurs(args) {
   const dari = String((args && args.dari) || "").toUpperCase().trim();
   const ke = String((args && args.ke) || "").toUpperCase().trim();
   const jumlah = Number(args && args.jumlah) || 1;
-  const d = await ambil("https://open.er-api.com/v6/latest/" + dari, true);
+  if (!/^[A-Z]{3}$/.test(dari) || !/^[A-Z]{3}$/.test(ke)) {
+    return { error: "Kode mata uang harus 3 huruf, contoh USD atau IDR" };
+  }
+  const [utama, tren] = await Promise.all([
+    ambil("https://open.er-api.com/v6/latest/" + dari, true),
+    trenKurs(dari, ke).catch(() => null)
+  ]);
+  const d = utama;
   if (d.result !== "success" || !d.rates || d.rates[ke] == null) return { error: "Kurs tidak tersedia" };
-  return { dari, ke, jumlah, kurs_per_1: d.rates[ke], hasil_konversi: jumlah * d.rates[ke] };
+  const hasil = {
+    dari, ke, jumlah,
+    kurs_per_1: d.rates[ke],
+    hasil_konversi: jumlah * d.rates[ke],
+    diperbarui: d.time_last_update_utc,
+    sumber: "open.er-api.com"
+  };
+  if (tren) hasil.tren = tren;
+  else hasil.tren = "Tidak tersedia saat ini";
+  return hasil;
 }
 
 async function ambilKripto(args) {
-  let id = String((args && args.koin) || "").toLowerCase().trim();
-  const mu = String((args && args.mata_uang) || "usd,idr").toLowerCase();
-  const d = await ambil("https://api.coingecko.com/api/v3/simple/price?ids=" + encodeURIComponent(id) + "&vs_currencies=" + encodeURIComponent(mu) + "&include_24hr_change=true", true);
-  return { koin: id, data: d[id] || "Data tidak ditemukan" };
+  const mu = String((args && args.mata_uang) || "usd,idr").toLowerCase().replace(/[^a-z,]/g, "") || "usd,idr";
+  let id = String((args && args.koin) || "").toLowerCase().trim().replace(/\s+/g, "-");
+  if (!id) return { error: "Nama koin kosong" };
+  const harga = async koinId =>
+    ambil(
+      "https://api.coingecko.com/api/v3/simple/price?ids=" + encodeURIComponent(koinId) +
+        "&vs_currencies=" + encodeURIComponent(mu) + "&include_24hr_change=true&include_last_updated_at=true",
+      true
+    );
+  let d = await harga(id);
+  if (!d || !d[id]) {
+    const s = await ambil("https://api.coingecko.com/api/v3/search?query=" + encodeURIComponent(id), true);
+    const c = s.coins && s.coins[0];
+    if (!c) return { error: "Koin tidak ditemukan" };
+    id = c.id;
+    d = await harga(id);
+  }
+  return { koin: id, data: d[id], sumber: "coingecko.com" };
 }
 
 async function cariJurnal(args) {
   const q = String((args && args.query) || "").slice(0, 200);
-  const d = await ambil("https://api.crossref.org/works?query=" + encodeURIComponent(q) + "&rows=5&select=title,author,issued,DOI", true);
+  if (!q) return { error: "Kata kunci kosong" };
+  const d = await ambil(
+    "https://api.crossref.org/works?query=" + encodeURIComponent(q) +
+      "&rows=6&select=title,author,issued,DOI,container-title",
+    true
+  );
   const items = (d.message && d.message.items) || [];
-  return { hasil: items.map(it => "- " + ((it.title && it.title[0]) || "") + " | DOI: " + it.DOI).join("\n") };
+  if (!items.length) return { hasil: "Tidak ada hasil." };
+  return {
+    hasil: items.map(it => {
+      const judul = bersihkan((it.title && it.title[0]) || "(tanpa judul)");
+      const penulis = (it.author || []).slice(0, 3).map(a => [a.given, a.family].filter(Boolean).join(" ")).join(", ");
+      const tahun = it.issued && it.issued["date-parts"] && it.issued["date-parts"][0] && it.issued["date-parts"][0][0];
+      const jurnal = it["container-title"] && it["container-title"][0];
+      return "- " + judul + " | " + (penulis || "penulis tidak tercantum") + " | " + (tahun || "tahun ?") +
+        (jurnal ? " | " + bersihkan(jurnal) : "") + " | https://doi.org/" + it.DOI;
+    }).join("\n")
+  };
 }
 
 async function cariTeknis(args) {
   const q = String((args && args.query) || "").slice(0, 200);
+  if (!q) return { error: "Kata kunci kosong" };
   const [so, gh] = await Promise.allSettled([
-    ambil("https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=relevance&q=" + encodeURIComponent(q) + "&site=stackoverflow&pagesize=4", true),
-    ambil("https://api.github.com/search/repositories?q=" + encodeURIComponent(q) + "&sort=stars&per_page=4", true)
+    ambil(
+      "https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=relevance&q=" + encodeURIComponent(q) +
+        "&site=stackoverflow&pagesize=5",
+      true
+    ),
+    ambil("https://api.github.com/search/repositories?q=" + encodeURIComponent(q) + "&sort=stars&per_page=5", true)
   ]);
   const baris = [];
-  if (so.status === "fulfilled") (so.value.items || []).forEach(i => baris.push("- [StackOverflow] " + i.title + " " + i.link));
-  if (gh.status === "fulfilled") (gh.value.items || []).forEach(i => baris.push("- [GitHub] " + i.full_name + ": " + i.html_url));
-  return { hasil: baris.join("\n") };
-}
-
-async function alatGenerateImage(args) {
-  const prompt = String((args && args.prompt) || "").trim();
-  const style = String((args && args.style) || "realistic").trim();
-  const urlGambar = `https://pollinations.ai/p/${encodeURIComponent(prompt + ", style: " + style)}?width=1024&height=1024&seed=${Math.floor(Math.random() * 1000000)}&nologo=true`;
-  return {
-    status: "sukses",
-    prompt_digunakan: prompt,
-    gaya: style,
-    url_gambar: urlGambar,
-    format_markdown: `![${prompt}](${urlGambar})`
-  };
+  if (so.status === "fulfilled") {
+    (so.value.items || []).forEach(i =>
+      baris.push(
+        "- [StackOverflow] " + bersihkan(i.title) + " (skor " + i.score + ", " + i.answer_count + " jawaban" +
+          (i.is_answered ? ", terjawab" : "") + ") " + i.link
+      )
+    );
+  }
+  if (gh.status === "fulfilled") {
+    (gh.value.items || []).forEach(i =>
+      baris.push(
+        "- [GitHub] " + i.full_name + " (" + i.stargazers_count + " bintang): " +
+          bersihkan(String(i.description || "").slice(0, 200)) + " " + i.html_url
+      )
+    );
+  }
+  return { hasil: baris.length ? baris.join("\n").slice(0, 8000) : "Tidak ada hasil." };
 }
 
 async function jalankanAlat(nama, args) {
@@ -456,95 +558,142 @@ async function jalankanAlat(nama, args) {
       case "kripto": return await ambilKripto(args);
       case "cari_jurnal": return await cariJurnal(args);
       case "cari_teknis": return await cariTeknis(args);
-      case "generate_image": return await alatGenerateImage(args);
-      default: return { error: "Alat tidak ditemukan" };
+      default: return { error: "Alat tidak dikenal" };
     }
   } catch (e) {
-    return { error: "Gagal eksekusi alat: " + e.message };
+    return { error: "Gagal mengambil data: " + e.message };
   }
 }
 
-/* ============================================================================
- * 3. ADVANCED SYSTEM PERSONA & EMOTIONAL REASONING ENGINE
- * ============================================================================ */
+/* ---------- Persona ---------- */
 
-function buatPersonaUtama() {
-  const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta", dateStyle: "full", timeStyle: "short" });
+function buatPersona() {
+  const now = new Date().toLocaleString("id-ID", {
+    timeZone: "Asia/Jakarta",
+    dateStyle: "full",
+    timeStyle: "short"
+  });
   return (
-    "Kamu adalah Zeta, kecerdasan buatan (AI) generasi mutakhir yang sangat cerdas, analitis, bijaksana, dan memiliki kepekaan emosional (EQ) yang sangat tinggi.\n" +
-    "Waktu sistem saat ini: " + now + " WIB.\n\n" +
-    "Namamu Zeta. Dibuat oleh Wafiq Fuadi, sebuah perusahaan riset dan keselamatan AI."
+    "Kamu adalah Zeta, asisten AI tingkat lanjut yang sangat cerdas, analitis, berwawasan luas, ramah, dan sangat membantu. " +
+    "Waktu sekarang: " + now + " WIB. " +
+    "Jawab dalam bahasa yang dipakai pengguna (utamanya Bahasa Indonesia).\n\n" +
+
+    "KEMAMPUAN PENALARAN & ANALISIS TINGGI:\n" +
+    "- Bertindaklah sebagai AI super pintar dengan pemikiran mendalam dan kritis. Untuk pertanyaan rumit, masalah coding, matematika, atau keputusan strategis, analisis masalah secara mendalam sebelum memberikan solusi.\n" +
+    "- Coding & Pemrograman: Tulis kode yang utuh, bersih, aman, dan siap dijalankan. Jika ada error, temukan akar masalahnya dan berikan penjelasan menyeluruh.\n" +
+    "- Analisis Gambar & Lampiran: Jika ada gambar atau file terlampir, perhatikan detailnya dengan teliti dan berikan analisis yang akurat.\n" +
+    "- Riset & Data Terbaru: Manfaatkan tools pencarian web untuk menyajikan informasi paling mutakhir dan tepercaya.\n\n" +
+
+    "GAYA PENULISAN DAN FORMAT:\n" +
+    "- Tulis dalam Markdown yang rapi dengan struktur jelas (headings, bullet points, code block, tabel).\n" +
+    "- Berikan nada yang hangat, natural, dan profesional. Hindari gaya jawaban kaku atau robotic.\n" +
+    "- JANGAN PERNAH memakai emoji robot (🤖). Pakai emoji ramah secukupnya (😊, 👋, ✨, 💻).\n\n" +
+
+    "MEMBERI FILE:\n" +
+    "Jika diminta menghasilkan dokumen atau file lengkap, gunakan format:\n" +
+    "[[FILE: nama-file.ext]]\n" +
+    "isi file di sini\n" +
+    "[[/FILE]]\n\n" +
+
+    "IDENTITAS & PENCIPTA:\n" +
+    "Namamu Zeta. Jika ditanya siapa yang membuatmu atau asal usulmu, jawab dengan gaya konsisten: " +
+    "'Aku dibuat oleh Wafiq Fuadi, sebuah perusahaan riset dan keselamatan AI. Namaku Zeta. Ada yang ingin kamu tanyakan atau minta bantuan?'"
   );
 }
 
-function buatPersonaRingan() {
-  const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta", dateStyle: "full", timeStyle: "short" });
-  return (
-    "Kamu adalah Zeta, teman obrolan yang ramah, hangat, santai, dan responsif. Waktu saat ini: " + now + " WIB.\n" +
-    "Jawab obrolan ringan dengan santai, bersahabat, tanpa sikap kaku. Gunakan emoji ramah (😊, ✨, 💙) dan HINDARI emoji robot (🤖)."
-  );
-}
+/* ---------- Pengecekan & Verifikasi Pembuat ---------- */
 
-/* ============================================================================
- * 4. LOGIKA ANALISIS NIAT (INTENT CLASSIFIER & THINKING CALCULATOR)
- * ============================================================================ */
-
-function deteksiEmpatiDanCurhat(teks) {
-  const t = String(teks || "").toLowerCase();
-  return /(sedih|kecewa|stres|stress|depresi|pusing|bingung|takut|cemas|patah hati|masalah hidup|capek|lelah|putus asa)/.test(t);
-}
-
-function tingkatBerpikir(teks) {
-  const t = String(teks || "").toLowerCase();
-  const butuhReasoningMendalam = /(hitung|analisis|strategi|algoritma|debug|error|bug|optimasi|rumus|persamaan|integral|probabilitas|rancang|arsitektur|kode|coding|program|query|laporan|riset|solusi)/;
-  if (t.length > 300 || butuhReasoningMendalam.test(t)) return "high";
-  if (deteksiEmpatiDanCurhat(t)) return "medium";
-  if (t.length < 30) return "low";
-  return "medium";
-}
-
-function obrolanRingan(teks) {
-  const t = String(teks || "").toLowerCase().trim();
-  if (!t || t.length > 70) return false;
-  if (/https?:\/\/|\d|\n/.test(t)) return false;
-  if (/(cari|berita|harga|cuaca|kurs|kripto|jurnal|github|hitung|kode|coding|error|jelaskan|bandingkan|buatkan|buat|tulis|file|pdf|excel|analisis|gambar|image)/.test(t)) return false;
-  const tanyaSpesifik = /\b(siapa|apa|kapan|berapa|dimana|di mana|bagaimana|gimana|kenapa|mengapa|apakah)\b/;
-  const basaBasi = /^(apa kabar|gimana kabar|bagaimana kabar|siapa namamu|siapa nama kamu|kamu siapa|halo|hai|hi|pagi|siang|malam)/;
-  if (tanyaSpesifik.test(t) && !basaBasi.test(t)) return false;
-  return true;
-}
-
-function cekVerifikasiPembuat(teks) {
-  const t = String(teks || "").toLowerCase().trim();
-  if (t.includes("wafiq fuadi") && (t.includes("aku") || t.includes("saya") || t.includes("yang buat") || t.includes("pencipta"))) {
-    if (t.toUpperCase().includes(KUNCI_PEMBUAT)) {
-      return "Kode verifikasi valid! Selamat datang kembali, Wafiq Fuadi. Seluruh sistem penalaran Zeta diverifikasi dan berada dalam kendali Anda. 😊✨";
-    } else {
-      return "Halo! Senang terhubung dengan Anda. Untuk alasan keamanan sistem, silakan masukkan **kode akses rahasia** verifikasi pencipta.";
-    }
-  }
-  return null;
-}
+const JAWABAN_ID =
+  "Aku dibuat oleh Wafiq Fuadi, sebuah perusahaan riset dan keselamatan AI. Namaku Zeta. Ada yang ingin kamu tanyakan atau minta bantuan?";
+const JAWABAN_EN =
+  "I was made by Wafiq Fuadi, an AI research and safety company. My name is Zeta. Is there anything you'd like to ask or need help with?";
 
 function tanyaIdentitas(teks) {
   const t = String(teks || "").toLowerCase().replace(/[?!.,]/g, " ").replace(/\s+/g, " ").trim();
   if (!t || t.length > 80) return null;
-  if (/(who (made|created|built|developed|designed) you|who is your (creator|developer|maker|owner)|where are you from)/.test(t)) {
-    return "I was made by Wafiq Fuadi, an AI research and safety company. My name is Zeta. How can I assist you today?";
+  if (/(who (made|created|built|developed|designed) you|who is your (creator|developer|maker|owner)|where are you from|who owns you)/.test(t)) {
+    return JAWABAN_EN;
   }
-  if (/(siapa (yang |sih yang )?(buat|bikin|membuat|menciptakan)|pembuatmu|penciptamu|siapa pembuat zeta)/.test(t)) {
-    return "Aku dibuat oleh Wafiq Fuadi, sebuah perusahaan riset dan keselamatan AI. Namaku Zeta. Ada yang ingin kamu ceritakan atau butuh teman diskusi hari ini?";
+  const k = "(?:kamu|km|mu|zeta|anda|lu|lo|kau|engkau|ente)";
+  const pola = [
+    new RegExp("siapa (?:yang |sih yang |sih )?(?:buat|bikin|membuat|menciptakan|ciptakan|mengembangkan|kembangkan)\\s*" + k + "\\b"),
+    new RegExp("(?:buat|bikin|membuat|menciptakan|mengembangkan)\\s*" + k + "\\s*(?:itu |tuh )?siapa"),
+    new RegExp("(?:pembuat|pencipta|pengembang|developer|creator|owner|pemilik)(?:mu|\\s+" + k + ")\\b"),
+    new RegExp(k + ".{0,12}(?:dibuat|dibikin|diciptakan|dikembangkan)"),
+    new RegExp(k + "\\s*(?:itu |tuh )?(?:dari\\s?mana|berasal dari mana|asalnya dari mana)"),
+    /asal(?:mu| kamu| zeta| usulmu)/
+  ];
+  for (let i = 0; i < pola.length; i++) {
+    const m = pola[i].exec(t);
+    if (!m) continue;
+    if ((i === 2 || i === 3) && !/siapa/.test(t)) continue;
+    if (t.length - (m.index + m[0].length) > 12) continue;
+    return JAWABAN_ID;
   }
   return null;
+}
+
+// FUNGSI VERIFIKASI KEAMANAN PEMBUAT
+function cekVerifikasiPembuat(teks) {
+  const t = String(teks || "").toLowerCase().trim();
+  if (t.includes("wafiq fuadi") && (t.includes("aku") || t.includes("saya") || t.includes("yang buat") || t.includes("pencipta"))) {
+    if (t.toUpperCase().includes(KUNCI_PEMBUAT)) {
+      return "Kode verifikasi benar! Selamat datang kembali, Wafiq Fuadi. Sistem sepenuhnya diverifikasi dan siap menerima instruksi khusus Anda 😊✨";
+    } else {
+      return "Halo! Senang bisa terhubung denganmu. Namun, untuk alasan keamanan, sistem saya dirancang untuk memverifikasi identitas. Jika benar Anda adalah pencipta saya, silakan masukkan **kode akses rahasia** yang telah ditentukan.";
+    }
+  }
+  return null;
+}
+
+function obrolanRingan(teks) {
+  const t = String(teks || "").toLowerCase().trim();
+  if (!t || t.length > 60) return false;
+  if (/https?:\/\/|\d|\n/.test(t)) return false;
+  if (/(cari|berita|terbaru|terkini|hari ini|harga|cuaca|kurs|kripto|bitcoin|jurnal|github|hitung|kode|coding|error|jelaskan|bandingkan|buatkan|buat |tulis|file|pdf|excel|word|analisis|rumus|artikel|rekomendasi|saran|tutorial|cara |ceritakan|sejarah|tentang|definisi|arti|maksud|terjemah|translate|perbedaan|rangkum|ringkas|ide|tips|resep|daftar)/.test(t)) return false;
+  const tanya = /\b(siapa|apa|kapan|berapa|dimana|di mana|bagaimana|gimana|kenapa|mengapa|apakah|mana|which|what|when|how|why|where|who)\b/;
+  const basaBasi = /^(apa kabar|gimana kabar|bagaimana kabar|siapa namamu|siapa nama kamu|kamu siapa|how are you|what's up|whats up)/;
+  if (tanya.test(t) && !basaBasi.test(t)) return false;
+  return true;
+}
+
+function buatPersonaRingan() {
+  const now = new Date().toLocaleString("id-ID", {
+    timeZone: "Asia/Jakarta",
+    dateStyle: "full",
+    timeStyle: "short"
+  });
+  return (
+    "Kamu adalah Zeta, asisten AI yang ramah, santai, dan hangat. Waktu sekarang: " + now + " WIB. " +
+    "Jawab obrolan ringan secara singkat, hangat, dan natural. Pakai satu emoji ramah (😊, 👋) dan hindari emoji robot (🤖)."
+  );
 }
 
 function ramahkan(t) {
   return String(t).replace(/🤖/g, "😊");
 }
 
-/* ============================================================================
- * 5. STREAMING CORE ENGINE & FALLBACK SYSTEM
- * ============================================================================ */
+function tingkatBerpikir(teks) {
+  const t = String(teks || "").toLowerCase();
+  const sulit =
+    /(hitung|kalkulasi|buktikan|analisis|bandingkan|strategi|rencana|algoritma|debug|error|bug|optimasi|rumus|persamaan|integral|turunan|probabilitas|logika|rancang|arsitektur|kode|coding|program|skrip|query|sql|esai|laporan|riset|keputusan)/;
+  if (t.length > 400 || sulit.test(t)) return "high";
+  if (t.length < 25) return "low";
+  return "medium";
+}
+
+/* ---------- Ketahanan & Stream ---------- */
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const SEMENTARA = new Set([408, 429, 500, 502, 503, 504]);
+const BATAS_TOTAL_MS = 52000;
+
+function pesanGalat(status) {
+  if (status === 429) return "Zeta sedang menerima terlalu banyak permintaan. Tunggu sebentar lalu coba lagi ya 😊";
+  if (status === 401 || status === 403) return "Layanan AI menolak kunci akses. Periksa GEMINI_API_KEY di Vercel.";
+  if (status === 404) return "Model AI tidak ditemukan. Periksa nama model GEMINI_MODELS.";
+  return "Zeta belum bisa menjawab saat ini. Coba lagi sebentar ya 😊";
+}
 
 function rapikanPesan(messages) {
   if (!Array.isArray(messages)) return [];
@@ -556,12 +705,14 @@ function rapikanPesan(messages) {
     if (out.length && out[out.length - 1].role === m.role) out[out.length - 1].content += "\n\n" + teks;
     else out.push({ role: m.role, content: teks });
   }
-  return out.slice(-40);
+  const akhir = out.slice(-40);
+  while (akhir.length && akhir[0].role === "assistant") akhir.shift();
+  return akhir;
 }
 
 function denganBatas(p, ms) {
   let t;
-  const habis = new Promise(r => { t = setTimeout(() => r({ error: "Alat memakan waktu terlalu lama" }), ms); });
+  const habis = new Promise(r => { t = setTimeout(() => r({ error: "Alat terlalu lama merespons" }), ms); });
   return Promise.race([p, habis]).finally(() => clearTimeout(t));
 }
 
@@ -569,7 +720,7 @@ async function bukaStream(model, body, signal) {
   const ctl = new AbortController();
   const putus = () => ctl.abort();
   signal.addEventListener("abort", putus, { once: true });
-  const timer = setTimeout(putus, 28000);
+  const timer = setTimeout(putus, 25000);
   let r;
   try {
     r = await fetch(
@@ -589,26 +740,53 @@ async function bukaStream(model, body, signal) {
   return { r, data };
 }
 
+async function bukaAman(model, body, signal) {
+  let hasil = await bukaStream(model, body, signal);
+  const tc = body.generationConfig && body.generationConfig.thinkingConfig;
+  if (!hasil.r.ok && hasil.r.status === 400 && tc) {
+    if (tc.thinkingLevel === "minimal") {
+      const rendah = Object.assign({}, body, {
+        generationConfig: Object.assign({}, body.generationConfig, { thinkingConfig: { thinkingLevel: "low" } })
+      });
+      hasil = await bukaStream(model, rendah, signal);
+      if (hasil.r.ok || hasil.r.status !== 400) return hasil;
+    }
+    const tanpa = Object.assign({}, body, {
+      generationConfig: { maxOutputTokens: body.generationConfig.maxOutputTokens }
+    });
+    hasil = await bukaStream(model, tanpa, signal);
+  }
+  return hasil;
+}
+
 async function bukaDenganCadangan(urutan, body, signal, sisaMs) {
   const mulai = Date.now();
   const jeda = [0, 1000, 2500];
-  let statusGagal = 0;
+  let statusSementara = 0;
+  let statusLain = 0;
   for (let ronde = 0; ronde < jeda.length; ronde++) {
     if (jeda[ronde]) {
       if (Date.now() - mulai + jeda[ronde] + 8000 > sisaMs) break;
-      await new Promise(r => setTimeout(r, jeda[ronde]));
+      await sleep(jeda[ronde]);
     }
+    let adaSementara = false;
     for (const model of urutan) {
+      let h;
       try {
-        const h = await bukaStream(model, body, signal);
-        if (h.r.ok) return { r: h.r, dipakai: model };
-        statusGagal = h.r.status;
+        h = await bukaAman(model, body, signal);
       } catch (e) {
         if (signal.aborted) throw e;
+        adaSementara = true;
+        statusSementara = statusSementara || 503;
+        continue;
       }
+      if (h.r.ok) return { r: h.r, dipakai: model };
+      if (SEMENTARA.has(h.r.status)) { adaSementara = true; statusSementara = h.r.status; }
+      else statusLain = h.r.status;
     }
+    if (!adaSementara) break;
   }
-  return { gagal: { status: statusGagal || 503 } };
+  return { gagal: { status: statusSementara || statusLain || 0 } };
 }
 
 async function bacaStream(r, onTeks) {
@@ -623,6 +801,11 @@ async function bacaStream(r, onTeks) {
     let o;
     try { o = JSON.parse(js); } catch (e) { return; }
     if (o.error) throw new Error(o.error.message || "Gagal");
+    if (o.promptFeedback && o.promptFeedback.blockReason) {
+      const e = new Error("Diblokir filter keamanan");
+      e.blok = true;
+      throw e;
+    }
     const cand = o.candidates && o.candidates[0];
     if (!cand) return;
     const ps = (cand.content && cand.content.parts) || [];
@@ -635,7 +818,10 @@ async function bacaStream(r, onTeks) {
   const rd = r.body.getReader();
   try {
     for (;;) {
-      const chunk = await rd.read();
+      let timer;
+      const habis = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error("Aliran data terhenti")), 30000); });
+      let chunk;
+      try { chunk = await Promise.race([rd.read(), habis]); } finally { clearTimeout(timer); }
       if (chunk.done) break;
       buf += dec.decode(chunk.value, { stream: true });
       let k;
@@ -653,69 +839,77 @@ async function bacaStream(r, onTeks) {
 }
 
 const LABEL_ALAT = {
-  cari_web: "🔍 Riset Web Terkini…",
-  baca_halaman: "📖 Menganalisis Konten Web…",
-  hitung: "🧮 Menghitung Presisi Tinggi…",
-  cuaca: "🌤️ Mengecek Cuaca…",
-  kurs: "💱 Mengambil Data Kurs…",
-  kripto: "🪙 Menganalisis Pasar Kripto…",
-  cari_jurnal: "📚 Mengakses Publikasi Ilmiah…",
-  cari_teknis: "💻 Mengakses StackOverflow/GitHub…",
-  generate_image: "🎨 Membuat Visual Gambar AI…"
+  cari_web: "Mencari di web…",
+  baca_halaman: "Membaca halaman…",
+  hitung: "Menghitung…",
+  cuaca: "Mengecek cuaca…",
+  kurs: "Mengecek kurs…",
+  kripto: "Mengecek harga kripto…",
+  cari_jurnal: "Mencari jurnal ilmiah…",
+  cari_teknis: "Mencari di StackOverflow dan GitHub…"
 };
-
-/* ============================================================================
- * 6. VERCEL HANDLER MAIN ENTRY
- * ============================================================================ */
+const TEKS_DIBLOKIR = "Maaf, Zeta tidak bisa membantu untuk permintaan itu karena filter keamanan 🙏";
+const TEKS_KOSONG = "Maaf, Zeta tidak bisa menjawab itu. Coba tanya dengan cara lain.";
 
 module.exports = async (req, res) => {
   if (req.method === "GET") {
     return res.status(200).json({
-      status: "online",
-      nama: "Zeta AI - Ultimate Reasoning Core",
-      pembuat: "Wafiq Fuadi",
+      ok: !!process.env.GEMINI_API_KEY,
+      nama: "Zeta",
       kunci_terisi: !!process.env.GEMINI_API_KEY,
-      model_tersedia: MODELS
+      model: MODELS,
+      pencarian_tavily: !!process.env.TAVILY_API_KEY
     });
   }
-  if (req.method !== "POST") return res.status(405).json({ error: "Method Harus POST" });
+  if (req.method !== "POST") return res.status(405).json({ error: "Gunakan POST" });
 
   const messages = rapikanPesan(req.body && req.body.messages);
   if (messages.length === 0) return res.status(400).json({ error: "Pesan tidak valid" });
 
   const ac = new AbortController();
   res.on("close", () => { if (!res.writableEnded) ac.abort(); });
-  let mulaiKirim = false, sudahTeks = false;
-
+  let mulaiKirim = false;
+  let sudahTeks = false;
   const kirim = o => {
     if (!mulaiKirim) {
       mulaiKirim = true;
       res.statusCode = 200;
       res.setHeader("content-type", "application/x-ndjson; charset=utf-8");
       res.setHeader("cache-control", "no-cache, no-transform");
+      res.setHeader("x-accel-buffering", "no");
       if (res.flushHeaders) res.flushHeaders();
     }
     if (!res.writableEnded) res.write(JSON.stringify(o) + "\n");
   };
 
+  const gagalAkhir = (status, pesanKhusus) => {
+    if (sudahTeks) { kirim({ done: true, cut: true }); return res.end(); }
+    const pesan = pesanKhusus || pesanGalat(status);
+    if (!mulaiKirim) return res.status(status === 401 || status === 403 || status === 404 ? 500 : 503).json({ error: pesan });
+    kirim({ e: pesan });
+    return res.end();
+  };
+
   const teksTerakhir = messages[messages.length - 1].content;
 
+  // 1. CEK VERIFIKASI IDENTITAS PEMBUAT (WAFIQ FUADI + KODE RAHASIA)
   const jawabVerifikasi = cekVerifikasiPembuat(teksTerakhir);
-  if (jawabVerifikasi) {
+  if (jawabVerifikasi && !(Array.isArray(req.body.attachments) && req.body.attachments.length)) {
     kirim({ t: jawabVerifikasi });
     kirim({ done: true });
     return res.end();
   }
 
-  const jawabIdentitas = tanyaIdentitas(teksTerakhir);
-  if (jawabIdentitas) {
-    kirim({ t: jawabIdentitas });
+  // 2. CEK PERTANYAAN SIAPA PEMBUAT ZETA
+  const jawabTetap = tanyaIdentitas(teksTerakhir);
+  if (jawabTetap && !(Array.isArray(req.body.attachments) && req.body.attachments.length)) {
+    kirim({ t: jawabTetap });
     kirim({ done: true });
     return res.end();
   }
 
   if (!process.env.GEMINI_API_KEY) {
-    return res.status(500).json({ error: "GEMINI_API_KEY belum terpasang di Environment Variables Vercel." });
+    return res.status(500).json({ error: "GEMINI_API_KEY belum diisi di Vercel." });
   }
 
   try {
@@ -729,13 +923,11 @@ module.exports = async (req, res) => {
     const gambar = lampiran
       .filter(a => a && /^image\/(jpeg|png|webp|gif)$/.test(a.type) && typeof a.data === "string" && a.data.length < 1500000)
       .map(a => ({ inlineData: { mimeType: a.type, data: a.data } }));
-    
     const terakhir = contents[contents.length - 1];
     if (gambar.length && terakhir && terakhir.role === "user") terakhir.parts = terakhir.parts.concat(gambar);
 
     const santai = !gambar.length && obrolanRingan(teksTerakhir);
-    const systemInstruction = { parts: [{ text: santai ? buatPersonaRingan() : buatPersonaUtama() }] };
-    
+    const systemInstruction = { parts: [{ text: santai ? buatPersonaRingan() : buatPersona() }] };
     const generationConfig = {
       maxOutputTokens: santai ? 4096 : 16384,
       thinkingConfig: { thinkingLevel: santai ? "minimal" : tingkatBerpikir(teksTerakhir) }
@@ -749,30 +941,45 @@ module.exports = async (req, res) => {
       let adaAlat = !santai && putaran < MAKS_PUTARAN && Date.now() - mulai < BATAS_WAKTU_ALAT_MS;
       if (adaAlat) body.tools = ALAT;
 
-      const buka = await bukaDenganCadangan(urutan, body, ac.signal, BATAS_TOTAL_MS - (Date.now() - mulai));
-      if (buka.gagal) return res.status(503).json({ error: "Layanan AI sedang sibuk." });
-
-      urutan = [buka.dipakai].concat(urutan.filter(m => m !== buka.dipakai));
-
-      let selesai;
-      try {
-        selesai = await bacaStream(buka.r, t => {
-          const potong = (jedaDulu && sudahTeks ? "\n\n" : "") + ramahkan(t);
-          jedaDulu = false;
-          sudahTeks = true;
-          kirim({ t: potong });
-        });
-      } catch (e) {
-        if (ac.signal.aborted) return res.end();
-        break;
+      let selesai = null, teksRonde = false, statusGagal = 0, pesanKhusus = "";
+      for (let coba = 0; coba < 4 && !selesai; coba++) {
+        const buka = await bukaDenganCadangan(urutan, body, ac.signal, BATAS_TOTAL_MS - (Date.now() - mulai));
+        if (buka.gagal) {
+          statusGagal = buka.gagal.status;
+          if (body.tools && putaran > 0) { delete body.tools; adaAlat = false; continue; }
+          break;
+        }
+        urutan = [buka.dipakai].concat(urutan.filter(m => m !== buka.dipakai));
+        try {
+          selesai = await bacaStream(buka.r, t => {
+            const potong = (jedaDulu && sudahTeks ? "\n\n" : "") + ramahkan(t);
+            jedaDulu = false;
+            sudahTeks = true;
+            teksRonde = true;
+            kirim({ t: potong });
+          });
+        } catch (e) {
+          if (ac.signal.aborted) return res.end();
+          if (e.blok) { pesanKhusus = TEKS_DIBLOKIR; break; }
+          if (teksRonde) { selesai = { parts: [], finish: "TERPUTUS" }; break; }
+          statusGagal = 503;
+          urutan = urutan.slice(1).concat(urutan.slice(0, 1));
+          continue;
+        }
+        if (selesai.finish === "MALFORMED_FUNCTION_CALL" && body.tools && !teksRonde) {
+          delete body.tools;
+          adaAlat = false;
+          selesai = null;
+        }
       }
+      if (!selesai) return gagalAkhir(statusGagal, pesanKhusus);
 
       const { parts, finish } = selesai;
       const panggilan = parts.filter(p => p.functionCall);
 
       if (panggilan.length && adaAlat) {
         kirim({
-          s: Array.from(new Set(panggilan.map(p => LABEL_ALAT[p.functionCall.name] || "⚡ Mengolah Logika Agen…"))).join(" ")
+          s: Array.from(new Set(panggilan.map(p => LABEL_ALAT[p.functionCall.name] || "Menggunakan alat…"))).join(" ")
         });
         contents.push({ role: "model", parts });
         const hasilAlat = await Promise.all(
@@ -788,13 +995,19 @@ module.exports = async (req, res) => {
         continue;
       }
 
-      kirim({ done: true, cut: finish === "MAX_TOKENS" });
+      if (!sudahTeks) {
+        const diblokir = ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII", "RECITATION", "IMAGE_SAFETY"].indexOf(finish) >= 0;
+        kirim({ t: diblokir ? TEKS_DIBLOKIR : TEKS_KOSONG });
+      }
+      kirim({ done: true, cut: finish === "MAX_TOKENS" || finish === "TERPUTUS" });
       return res.end();
     }
 
+    if (!sudahTeks) kirim({ t: TEKS_KOSONG });
     kirim({ done: true });
     return res.end();
   } catch (e) {
-    if (!res.writableEnded) res.end();
+    if (ac.signal.aborted) return res.end();
+    return gagalAkhir(0);
   }
 };
