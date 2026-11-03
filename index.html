@@ -42,7 +42,7 @@ header{padding:14px 18px;background:var(--card);border-bottom:1px solid var(--bd
 .ib{border:0;background:none;color:var(--tx);width:36px;height:36px;border-radius:10px;display:grid;place-items:center;cursor:pointer;flex:none}
 .ib:hover{background:var(--hov)}
 .logo{width:34px;height:34px;border-radius:10px;background:#6d4aff;color:#fff;display:grid;place-items:center;font-weight:700}
-img.logo{background:none;object-fit:contain}
+img.logo{background:#fff;border-radius:50%;padding:4px;object-fit:contain}
 header span{display:block;font-size:12px;color:var(--mut)}
 .wm{font-family:"Arial Black","Segoe UI",Roboto,system-ui,sans-serif;font-weight:900;font-size:20px;letter-spacing:.06em;color:var(--wm);line-height:1.1}
 #log{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;max-width:760px;width:100%;margin:0 auto}
@@ -746,6 +746,23 @@ window.addEventListener("unhandledrejection",e=>{console.error(e.reason);if(busy
 window.addEventListener("error",e=>{console.error(e.error||e.message)});
 window.addEventListener("offline",()=>toast("Kamu sedang offline"));
 window.addEventListener("online",()=>toast("Kembali online"));
+/* favicon dari logo */
+(function(){
+  const im=document.querySelector("header img.logo");if(!im)return;
+  function mk(){
+    const S=64,c=document.createElement("canvas");c.width=c.height=S;
+    const x=c.getContext("2d");
+    x.fillStyle="#fff";x.beginPath();x.arc(S/2,S/2,S/2,0,Math.PI*2);x.fill();
+    const p=S*.12,a=S-p*2,k=Math.min(a/im.naturalWidth,a/im.naturalHeight),
+          w=im.naturalWidth*k,h=im.naturalHeight*k;
+    x.drawImage(im,(S-w)/2,(S-h)/2,w,h);
+    let l=document.querySelector("link[rel=icon]");
+    if(!l){l=document.createElement("link");l.rel="icon";document.head.appendChild(l)}
+    l.type="image/png";l.href=c.toDataURL("image/png");
+  }
+  im.complete&&im.naturalWidth?mk():im.addEventListener("load",mk);
+})();
+
 if(mobile())setSide(false);
 applyTheme();renderList();autosize();
 </script>
