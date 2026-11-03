@@ -1,13 +1,14 @@
 // =====================================================================
 // Zeta - api/chat.js
-// Respons JSON: { text, terpotong }  (cocok dengan index.html)
+// Respons streaming (ndjson): {t}, {s}, {e}, {done, cut}  (cocok dengan index.html)
+// Jawaban tetap dan penolakan keamanan dibalas JSON biasa: { text }
 // =====================================================================
 
 // Urutan model: coba yang lebih pintar dulu, kalau gagal pakai berikutnya.
-// Bisa diganti tanpa mengubah kode: isi GEMINI_MODELS di Vercel, contoh: gemini-3.5-flash,gemini-3.1-flash-lite
+// Bisa diganti tanpa mengubah kode: isi GEMINI_MODELS di Vercel, contoh: gemini-3.7-flash,gemini-3.5-flash,gemini-3.1-flash-lite
 const MODELS = process.env.GEMINI_MODELS
   ? process.env.GEMINI_MODELS.split(",").map(s => s.trim()).filter(Boolean)
-  : ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
+  : ["gemini-3.7-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
 
 const MAKS_PUTARAN = 6;
 const BATAS_WAKTU_ALAT_MS = 30000;
@@ -322,12 +323,14 @@ function sapaanRingan(teks) {
   return /^(hai|halo|hallo|hi|hello|hey|hei|p|woi|pagi|siang|sore|malam|selamat (pagi|siang|sore|malam)|assalamualaikum|assalamu'alaikum|permisi|makasih|terima kasih|thanks|thank you|oke|ok|sip|mantap|wkwk|haha|hehe|apa kabar|gimana kabar|zeta|zet|zeta ai|tes|test|testing|ping|oi)( zeta| kak| bro| min)?$/.test(t);
 }
 
+// Level berpikir: "low" = cepat, "medium" = lebih dalam, "high" = paling dalam tapi paling lambat.
+// Kalau mau jawaban lebih mendalam, ganti "low" jadi "medium" di baris terakhir.
 function tingkatBerpikir(teks, curhat) {
   const t = String(teks || "").toLowerCase();
   const sulit =
     /(hitung|kalkulasi|buktikan|analisis|bandingkan|strategi|rencana|algoritma|debug|error|bug|optimasi|rumus|persamaan|integral|turunan|probabilitas|logika|rancang|arsitektur|kode|coding|program|skrip|query|sql|esai|laporan|riset|keputusan|dilema|pertimbangan|pro dan kontra|kelebihan dan kekurangan)/;
-  if (curhat || t.length > 400 || sulit.test(t)) return "high";
-  return "medium";
+  if (t.length > 400 || sulit.test(t)) return "medium";
+  return "low";
 }
 
 /* =====================================================================
@@ -1024,7 +1027,7 @@ function buatPersonaRingan() {
 }
 
 /* =====================================================================
-   7. PEMANGGILAN GEMINI (dengan percobaan ulang dan cadangan model)
+   7. UTILITAS GEMINI
    ===================================================================== */
 
 const SEMENTARA = new Set([408, 429, 500, 502, 503, 504]);
@@ -1051,66 +1054,150 @@ function rapikanPesan(messages) {
   return akhir;
 }
 
-async function panggilGemini(model, body) {
-  const r = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-goog-api-key": process.env.GEMINI_API_KEY
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(28000)
+/* =====================================================================
+   8. STREAMING KE GEMINI
+   ===================================================================== */
+
+const IDLE_MS = 25000; // tidak ada data sama sekali selama ini = dianggap macet
+
+const LABEL_ALAT = {
+  cari_web: "Mencari di web…",
+  baca_halaman: "Membaca halaman…",
+  hitung: "Menghitung…",
+  cuaca: "Mengecek cuaca…",
+  kurs: "Mengecek kurs…",
+  kripto: "Mengecek harga kripto…",
+  cari_jurnal: "Mencari jurnal…",
+  cari_teknis: "Mencari solusi teknis…"
+};
+
+// Satu panggilan streaming. Teks diteruskan lewat kirimTeks begitu tiba.
+// Mengembalikan { ok:false, status } kalau Gemini menolak sebelum mulai,
+// atau { ok:true, parts, finish, block } kalau selesai.
+async function streamGemini(model, body, kirimTeks, batasAkhir) {
+  const ac = new AbortController();
+  let timer = setTimeout(() => ac.abort(), IDLE_MS);
+  const reset = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => ac.abort(), IDLE_MS);
+  };
+  let sudahKirim = false;
+  let reader = null;
+  try {
+    const r = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":streamGenerateContent?alt=sse",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+        body: JSON.stringify(body),
+        signal: ac.signal
+      }
+    );
+    if (!r.ok) {
+      try { await r.arrayBuffer(); } catch (e) { /* abaikan */ }
+      return { ok: false, status: r.status };
     }
-  );
-  const data = await r.json().catch(() => ({}));
-  return { r, data };
+
+    reader = r.body.getReader();
+    const dec = new TextDecoder();
+    const parts = [];
+    let buf = "", finish = "", block = "", terpotong = false;
+
+    const olah = ln => {
+      if (ln.indexOf("data:") !== 0) return;
+      const js = ln.slice(5).trim();
+      if (!js || js === "[DONE]") return;
+      let d;
+      try { d = JSON.parse(js); } catch (e) { return; }
+      if (d.error) {
+        const err = new Error(d.error.message || "Galat dari layanan AI");
+        err.status = d.error.code;
+        throw err;
+      }
+      if (d.promptFeedback && d.promptFeedback.blockReason) block = d.promptFeedback.blockReason;
+      const c = d.candidates && d.candidates[0];
+      if (!c) return;
+      if (c.finishReason) finish = c.finishReason;
+      const ps = (c.content && c.content.parts) || [];
+      for (const p of ps) {
+        parts.push(p);
+        if (p.text && !p.thought) {
+          sudahKirim = true;
+          kirimTeks(p.text);
+        }
+      }
+    };
+
+    for (;;) {
+      if (Date.now() > batasAkhir) { terpotong = true; break; }
+      const { value, done } = await reader.read();
+      if (done) break;
+      reset();
+      buf += dec.decode(value, { stream: true });
+      let k;
+      while ((k = buf.indexOf("\n")) >= 0) {
+        const ln = buf.slice(0, k).replace(/\r$/, "");
+        buf = buf.slice(k + 1);
+        olah(ln);
+      }
+    }
+    if (buf.trim()) olah(buf.replace(/\r$/, ""));
+
+    return { ok: true, parts, finish: terpotong ? "MAX_TOKENS" : finish, block };
+  } catch (e) {
+    e.sudahKirim = sudahKirim;
+    throw e;
+  } finally {
+    clearTimeout(timer);
+    if (reader) { try { reader.cancel(); } catch (e) { /* abaikan */ } }
+  }
 }
 
-// Coba dengan tingkat berpikir yang diminta; kalau model menolak pengaturannya, ulangi dengan level lebih rendah lalu tanpa pengaturan.
-async function panggilAman(model, body) {
-  let hasil = await panggilGemini(model, body);
+// Kalau model menolak pengaturan berpikir (400): coba level lebih rendah, lalu tanpa pengaturan.
+async function streamAman(model, body, kirimTeks, batasAkhir) {
+  let h = await streamGemini(model, body, kirimTeks, batasAkhir);
   const tc = body.generationConfig && body.generationConfig.thinkingConfig;
-  if (!hasil.r.ok && hasil.r.status === 400 && tc) {
+  if (!h.ok && h.status === 400 && tc) {
     if (tc.thinkingLevel === "high") {
       const sedang = Object.assign({}, body, {
         generationConfig: Object.assign({}, body.generationConfig, { thinkingConfig: { thinkingLevel: "medium" } })
       });
-      hasil = await panggilGemini(model, sedang);
-      if (hasil.r.ok || hasil.r.status !== 400) return hasil;
+      h = await streamGemini(model, sedang, kirimTeks, batasAkhir);
+      if (h.ok || h.status !== 400) return h;
     }
     const tanpa = Object.assign({}, body, {
       generationConfig: { maxOutputTokens: body.generationConfig.maxOutputTokens }
     });
-    hasil = await panggilGemini(model, tanpa);
+    h = await streamGemini(model, tanpa, kirimTeks, batasAkhir);
   }
-  return hasil;
+  return h;
 }
 
-async function panggilDenganCadangan(urutan, body, sisaMs) {
-  const mulai = Date.now();
+// Coba model satu per satu; kalau sibuk atau gagal, pindah ke cadangan.
+// Pindah hanya mungkin selama belum ada teks yang terkirim ke pengguna.
+async function streamDenganCadangan(urutan, body, kirimTeks, batasAkhir) {
   const jeda = [0, 1000, 2500];
   let statusSementara = 0;
   let statusLain = 0;
   for (let ronde = 0; ronde < jeda.length; ronde++) {
     if (jeda[ronde]) {
-      if (Date.now() - mulai + jeda[ronde] + 8000 > sisaMs) break;
+      if (Date.now() + jeda[ronde] + 8000 > batasAkhir) break;
       await sleep(jeda[ronde]);
     }
     let adaSementara = false;
     for (const model of urutan) {
       let h;
       try {
-        h = await panggilAman(model, body);
+        h = await streamAman(model, body, kirimTeks, batasAkhir);
       } catch (e) {
+        if (e.sudahKirim) throw e; // sebagian jawaban sudah sampai ke pengguna
         adaSementara = true;
-        statusSementara = statusSementara || 503;
+        statusSementara = statusSementara || e.status || 503;
         continue;
       }
-      if (h.r.ok) return { data: h.data, dipakai: model };
-      if (SEMENTARA.has(h.r.status)) { adaSementara = true; statusSementara = h.r.status; }
-      else statusLain = h.r.status;
+      if (h.ok) return { hasil: h, dipakai: model };
+      if (SEMENTARA.has(h.status)) { adaSementara = true; statusSementara = h.status; }
+      else statusLain = h.status;
     }
     if (!adaSementara) break;
   }
@@ -1118,28 +1205,7 @@ async function panggilDenganCadangan(urutan, body, sisaMs) {
 }
 
 /* =====================================================================
-   8. PENYARING FORMAT: HAPUS TANDA BINTANG DI TEKS CHAT
-   ===================================================================== */
-
-// Blok kode, kode inline, dan isi file tidak disentuh.
-function tanpaBintang(teks) {
-  const bagian = String(teks).split(
-    /(```[\s\S]*?```|```[\s\S]*$|`[^`\n]*`|\[\[FILE:[\s\S]*?\[\[\/FILE\]\]|\[\[FILE:[\s\S]*$)/
-  );
-  return bagian
-    .map((b, i) => {
-      if (i % 2 === 1) return b;
-      return b
-        .replace(/^([ \t]*)\*[ \t]+/gm, "$1- ")
-        .replace(/\*\*([^\n]*?)\*\*/g, (_, x) => x.trim())
-        .replace(/(^|[^\w*])\*([^\s*][^*\n]*?)\*(?![\w*])/gm, "$1$2")
-        .replace(/\*\*/g, "");
-    })
-    .join("");
-}
-
-/* =====================================================================
-   9. HANDLER
+   9. HANDLER (dengan streaming)
    ===================================================================== */
 
 const TEKS_DIBLOKIR = "Maaf, Zeta tidak bisa membantu untuk permintaan itu karena filter keamanan 🙏";
@@ -1167,21 +1233,21 @@ module.exports = async (req, res) => {
   // 0. Kode pembuat: kalau pesan hanya berisi kode, balas salam pembuat (kode tidak dikirim ke Gemini)
   const kode = kodePembuat();
   if (kode && hanyaKode(asli, kode)) {
-    await sleep(1200 + Math.random() * 1200);
+    await sleep(600 + Math.random() * 600);
     return res.status(200).json({ text: JAWABAN_PEMBUAT });
   }
 
-  // 1. Pertanyaan tentang pembuat: jawaban tetap, dengan jeda agar terasa seperti memproses
+  // 1. Pertanyaan tentang pembuat: jawaban tetap
   const jawabanTetap = jawabanIdentitas(asli);
   if (jawabanTetap) {
-    await sleep(1400 + Math.random() * 1600);
+    await sleep(600 + Math.random() * 600);
     return res.status(200).json({ text: jawabanTetap });
   }
 
   // 2. Permintaan yang dilarang
   const blok = periksaKeamanan(asli);
   if (blok) {
-    await sleep(900 + Math.random() * 900);
+    await sleep(400 + Math.random() * 400);
     return res.status(200).json({ text: blok.pesan });
   }
 
@@ -1189,11 +1255,51 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: "GEMINI_API_KEY belum diisi di Vercel." });
   }
 
+  // Foto dari index (sudah dikecilkan di browser)
+  const imgs = Array.isArray(req.body && req.body.attachments)
+    ? req.body.attachments
+        .filter(a => a && typeof a.data === "string" && /^image\//.test(String(a.type || "")))
+        .slice(0, 4)
+    : [];
+
+  // ---- penulis aliran: satu JSON per baris (ndjson), cocok dengan index.html ----
+  let mulaiStream = false;
+  const tulis = o => {
+    if (!mulaiStream) {
+      mulaiStream = true;
+      res.writeHead(200, {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no"
+      });
+    }
+    res.write(JSON.stringify(o) + "\n");
+  };
+  const gagal = (status, pesan) => {
+    if (!mulaiStream) return res.status(status).json({ error: pesan });
+    tulis({ e: pesan });
+    return res.end();
+  };
+
+  let adaMasking = false;
+  let semua = "";
+  let notaTerkirim = false;
+  const kirimTeks = t => {
+    t = String(t).replace(/🤖/g, "😊");
+    if (adaMasking && !notaTerkirim) {
+      notaTerkirim = true;
+      semua += CATATAN_MASKING + "\n\n";
+      tulis({ t: CATATAN_MASKING + "\n\n" });
+    }
+    semua += t;
+    tulis({ t });
+  };
+
   try {
     const mulai = Date.now();
+    const batasAkhir = mulai + BATAS_TOTAL_MS;
 
     // 3. Samarkan data sensitif sebelum dikirim ke Gemini
-    let adaMasking = false;
     const pembuat = !!kode && messages.some(m => m.role === "user" && mengandungKode(m.content, kode));
     const aman = messages.map((m, i) => {
       if (m.role !== "user") return m;
@@ -1207,42 +1313,45 @@ module.exports = async (req, res) => {
     const curhat = krisis || POLA_CURHAT.test(kecil);
     const santai = sapaanRingan(asli);
 
-    const contents = aman.map(m => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }]
-    }));
+    const contents = aman.map((m, i) => {
+      const parts = [{ text: m.content }];
+      if (m.role === "user" && i === aman.length - 1) {
+        imgs.forEach(a => parts.push({ inlineData: { mimeType: a.type, data: a.data } }));
+      }
+      return { role: m.role === "assistant" ? "model" : "user", parts };
+    });
     const systemInstruction = { parts: [{ text: santai ? buatPersonaRingan() : buatPersona(krisis, pembuat, !!kode) }] };
     const generationConfig = {
       maxOutputTokens: santai ? 2048 : 16384,
       thinkingConfig: { thinkingLevel: santai ? "low" : tingkatBerpikir(asli, curhat) }
     };
 
-    let urutan = MODELS.slice();
+    // Sapaan ringan: model paling ringan dulu supaya balasannya kilat.
+    let urutan = santai ? MODELS.slice().reverse() : MODELS.slice();
     let matikanAlat = false;
+    let finishAkhir = "";
 
     for (let putaran = 0; putaran <= MAKS_PUTARAN; putaran++) {
       const body = { systemInstruction, contents, generationConfig };
       let adaAlat = !santai && !matikanAlat && putaran < MAKS_PUTARAN && Date.now() - mulai < BATAS_WAKTU_ALAT_MS;
       if (adaAlat) body.tools = ALAT;
 
-      let buka = await panggilDenganCadangan(urutan, body, BATAS_TOTAL_MS - (Date.now() - mulai));
+      let buka = await streamDenganCadangan(urutan, body, kirimTeks, batasAkhir);
       if (buka.gagal && body.tools && putaran > 0) {
         // coba sekali lagi tanpa alat supaya pengguna tetap dapat jawaban
         delete body.tools;
         adaAlat = false;
         matikanAlat = true;
-        buka = await panggilDenganCadangan(urutan, body, BATAS_TOTAL_MS - (Date.now() - mulai));
+        buka = await streamDenganCadangan(urutan, body, kirimTeks, batasAkhir);
       }
       if (buka.gagal) {
         const s = buka.gagal.status;
-        return res.status(s === 401 || s === 403 || s === 404 ? 500 : 503).json({ error: pesanGalat(s) });
+        return gagal(s === 401 || s === 403 || s === 404 ? 500 : 503, pesanGalat(s));
       }
       urutan = [buka.dipakai].concat(urutan.filter(m => m !== buka.dipakai));
 
-      const data = buka.data;
-      const cand = data.candidates && data.candidates[0];
-      const parts = (cand && cand.content && cand.content.parts) || [];
-      const finish = (cand && cand.finishReason) || "";
+      const { parts, finish, block } = buka.hasil;
+      finishAkhir = finish;
 
       if (finish === "MALFORMED_FUNCTION_CALL" && adaAlat) {
         matikanAlat = true;
@@ -1252,7 +1361,8 @@ module.exports = async (req, res) => {
       const panggilan = parts.filter(p => p.functionCall);
       if (panggilan.length && adaAlat) {
         // simpan balasan model apa adanya (termasuk tanda tangan pemikiran), lalu jawab dengan hasil alat
-        contents.push(cand.content);
+        contents.push({ role: "model", parts });
+        panggilan.forEach(p => tulis({ s: LABEL_ALAT[p.functionCall.name] || "Memproses…" }));
         const hasil = await Promise.all(
           panggilan.map(async p => ({
             functionResponse: {
@@ -1265,27 +1375,22 @@ module.exports = async (req, res) => {
         continue;
       }
 
-      let text = tanpaBintang(
-        parts
-          .filter(p => !p.thought)
-          .map(p => p.text || "")
-          .join("")
-      ).replace(/🤖/g, "😊");
-
-      if (!text.trim()) {
+      // jawaban akhir sudah terkirim lewat kirimTeks; tinggal merapikan penutup
+      if (!semua.trim()) {
         const diblokir =
-          (data.promptFeedback && data.promptFeedback.blockReason) ||
+          !!block ||
           ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII", "RECITATION", "IMAGE_SAFETY"].indexOf(finish) >= 0;
-        text = diblokir ? TEKS_DIBLOKIR : TEKS_KOSONG;
+        kirimTeks(diblokir ? TEKS_DIBLOKIR : TEKS_KOSONG);
       }
-      if (krisis && !/(119|healing119)/.test(text)) text += "\n\n" + FOOTER_KRISIS;
-      if (adaMasking) text = CATATAN_MASKING + "\n\n" + text;
-
-      return res.status(200).json({ text, terpotong: finish === "MAX_TOKENS" });
+      break;
     }
 
-    return res.status(200).json({ text: TEKS_KOSONG });
+    if (!semua.trim()) kirimTeks(TEKS_KOSONG);
+    if (krisis && !/(119|healing119)/.test(semua)) kirimTeks("\n\n" + FOOTER_KRISIS);
+    tulis({ done: true, cut: finishAkhir === "MAX_TOKENS" });
+    return res.end();
   } catch (e) {
-    return res.status(500).json({ error: "Terjadi gangguan" });
+    console.error("Zeta error:", e);
+    return gagal(500, "Terjadi gangguan");
   }
 };
