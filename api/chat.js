@@ -10,8 +10,8 @@ const MODELS = process.env.GEMINI_MODELS
   ? process.env.GEMINI_MODELS.split(",").map(s => s.trim()).filter(Boolean)
   : ["gemini-3.7-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
 
-const MAKS_PUTARAN = 10;
-const BATAS_WAKTU_ALAT_MS = 42000;
+const MAKS_PUTARAN = 5;
+const BATAS_WAKTU_ALAT_MS = 30000;
 const BATAS_TOTAL_MS = 55000;
 
 const UA_BOT = "Mozilla/5.0 (compatible; ZetaBot/1.0)";
@@ -323,13 +323,16 @@ function sapaanRingan(teks) {
   return /^(hai|halo|hallo|hi|hello|hey|hei|p|woi|pagi|siang|sore|malam|selamat (pagi|siang|sore|malam)|assalamualaikum|assalamu'alaikum|permisi|makasih|terima kasih|thanks|thank you|oke|ok|sip|mantap|wkwk|haha|hehe|apa kabar|gimana kabar|zeta|zet|zeta ai|tes|test|testing|ping|oi)( zeta| kak| bro| min)?$/.test(t);
 }
 
-// Level berpikir: "low" = cepat, "medium" = dalam, "high" = paling dalam.
-// Prioritas Zeta adalah kualitas: hampir semua pertanyaan dijawab dengan "medium" ke atas.
+// Level berpikir: "low" = cepat, "medium" = dalam, "high" = paling dalam tapi paling lambat.
+// Seimbang: sapaan dan pertanyaan sederhana cepat, pertanyaan biasa "medium", hanya soal berat yang "high".
 function tingkatBerpikir(teks, curhat) {
   const t = String(teks || "").toLowerCase();
   if (curhat) return "medium"; // curhat: cukup dalam untuk empati yang tepat
-  const sederhana = t.length < 80 && !/(analisis|bandingkan|jelaskan|mengapa|kenapa|bagaimana|strategi|kode|coding|debug|hitung|buktikan|rancang|riset|evaluasi|pro dan kontra)/.test(t);
-  return sederhana ? "medium" : "high";
+  const berat =
+    /(buktikan|algoritma|arsitektur|debug|optimasi|integral|turunan|probabilitas|rancang|refactor|review kode|pro dan kontra|kelebihan dan kekurangan|dilema)/;
+  if (t.length > 1200 || berat.test(t)) return "high";
+  const sederhana = t.length < 80 && !/(analisis|bandingkan|jelaskan|mengapa|kenapa|bagaimana|strategi|kode|coding|hitung|riset|evaluasi)/.test(t);
+  return sederhana ? "low" : "medium";
 }
 
 // Alat aktif untuk hampir semua pertanyaan: model sendiri yang memutuskan perlu mencari atau tidak.
